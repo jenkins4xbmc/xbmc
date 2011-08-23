@@ -147,7 +147,9 @@
 #ifdef HAVE_LIBXRANDR
 #define HAS_XRANDR
 #endif
+#ifdef HAVE_LIBPLIST
 #define HAS_AIRPLAY
+#endif
 #endif
 
 #ifdef HAVE_LIBSSH
