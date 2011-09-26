@@ -854,26 +854,21 @@ else
 fi
 
 # libplist for airplay feature
+USE_AIRPLAY=0
 if test "$use_airplay" != "no"; then
   AC_CHECK_LIB([plist],[main],,
    [if test "$use_airplay" = "yes"; then
       AC_MSG_ERROR($libplist_not_found)
-      USE_AIRPLAY=0
     elif test "$use_airplay" != "no"; then
       AC_MSG_NOTICE($libplist_not_found)
       use_airplay="no"
-      USE_AIRPLAY=0
     fi
    ])
+
   if test "$use_airplay" != "no"; then
     XB_FIND_SONAME([PLIST], [plist], [use_airplay])
-  fi
-  if test "$use_airplay" != "no"; then
     USE_AIRPLAY=1
   fi
-else
-  USE_AIRPLAY=0
-  AC_MSG_NOTICE($libplist_disabled)
 fi
 
 
