@@ -101,7 +101,7 @@ SRCS+=FileNFS.cpp
 SRCS+=NFSDirectory.cpp
 endif
 
-ifeq (@USE_LIBAFPCLIENT@,1)
+ifeq (@USE_AFP@,1)
 SRCS+=FileAFP.cpp
 SRCS+=AFPDirectory.cpp
 endif
