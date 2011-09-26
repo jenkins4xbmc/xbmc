@@ -96,7 +96,7 @@ SRCS+=FileSmb.cpp
 SRCS+=SMBDirectory.cpp
 endif
 
-ifeq (@USE_LIBNFS@,1)
+ifeq (@USE_NFS@,1)
 SRCS+=FileNFS.cpp
 SRCS+=NFSDirectory.cpp
 endif

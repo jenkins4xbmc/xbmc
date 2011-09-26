@@ -281,9 +281,9 @@ AC_ARG_ENABLE([samba],
 
 AC_ARG_ENABLE([nfs],
   [AS_HELP_STRING([--enable-nfs],
-  [enable NFS support via libnfs (default is auto)])],
-  [use_libnfs=$enableval],
-  [use_libnfs=auto])
+  [enable NFS support (default is auto)])],
+  [use_nfs=$enableval],
+  [use_nfs=auto])
 
 AC_ARG_ENABLE([afpclient],
   [AS_HELP_STRING([--enable-afpclient],
@@ -962,28 +962,21 @@ if test "x$use_samba" != "xno"; then
   USE_LIBSMBCLIENT=1
 fi
 
-# libnfs
-if test "$use_libnfs" != "no"; then
-  AC_CHECK_HEADERS([nfsc/libnfs.h],,
-   [if test "$use_libnfs" = "yes"; then
+# nfs support via libnfs
+USE_NFS=0
+if test "$use_nfs" != "no"; then
+  AC_CHECK_LIB([nfs],[main],,
+   [if test "$use_nfs" = "yes"; then
       AC_MSG_ERROR($libnfs_not_found)
-      USE_LIBNFS=0
-    elif test "$use_libnfs" != "no"; then
+    elif test "$use_nfs" != "no"; then
       AC_MSG_NOTICE($libnfs_not_found)
-      use_libnfs="no"
-      USE_LIBNFS=0
+      use_nfs="no"
     fi
    ])
-  if test "$use_libnfs" != "no"; then
-    XB_FIND_SONAME([NFS], [nfs], [use_libnfs])
+  if test "$use_nfs" != "no"; then
+    XB_FIND_SONAME([NFS], [nfs], [use_nfs])
+    USE_NFS=1
   fi
-  if test "$use_libnfs" != "no"; then
-    AC_DEFINE([HAVE_LIBNFS], [1], [Whether to use libnfs library.])
-    USE_LIBNFS=1
-  fi
-else
-  USE_LIBNFS=0
-  AC_MSG_NOTICE($libnfs_disabled)
 fi
 
 # libafpclient
@@ -1614,10 +1607,10 @@ else
   final_message="$final_message\n  libsmbclient support:\tNo"
 fi
 
-if test "$use_libnfs" != "no"; then
-  final_message="$final_message\n  libnfs support:\tYes"
+if test "$use_nfs" != "no"; then
+  final_message="$final_message\n  nfs support:\tYes"
 else
-  final_message="$final_message\n  libnfs support:\tNo"
+  final_message="$final_message\n  nfs support:\tNo"
 fi
 
 if test "x$use_libafpclient" != "xno"; then
@@ -1741,7 +1734,7 @@ AC_SUBST(USE_VDPAU)
 AC_SUBST(USE_VAAPI)
 AC_SUBST(USE_CRYSTALHD)
 AC_SUBST(USE_LIBSMBCLIENT)
-AC_SUBST(USE_LIBNFS)
+AC_SUBST(USE_NFS)
 AC_SUBST(USE_LIBAFPCLIENT)
 AC_SUBST(USE_AIRPLAY)
 AC_SUBST(USE_VDA)
