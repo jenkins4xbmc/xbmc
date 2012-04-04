@@ -30,6 +30,7 @@
 #include "guilib/DispResource.h"
 #include "guilib/GUIWindowManager.h"
 #include "settings/Settings.h"
+#include "settings/AdvancedSettings.h"
 #include "settings/GUISettings.h"
 #include "input/KeyboardStat.h"
 #include "threads/SingleLock.h"
@@ -1371,6 +1372,17 @@ void CWinSystemOSX::DisplayReconfigured(CGDirectDisplayID display,
         winsys->CheckDisplayChanging(flags);
       }
     }
+  }
+
+  //if a display is removed - update resolutions 
+  //and move xbmc to the safe place (main display)
+  if( flags & kCGDisplayRemoveFlag )
+  {
+    bool blankOtherDisplays = g_guiSettings.GetBool("videoscreen.blankdisplays");
+    CLog::Log(LOGDEBUG, "CWinSystemOSX display removed - moving XBMC to main display");
+    CSingleLock lock(winsys->m_resourceSection);    
+    winsys->UpdateResolutions();      
+    winsys->SetFullScreen(g_advancedSettings.m_fullScreen, g_settings.m_ResInfo[RES_DESKTOP], blankOtherDisplays);
   }
 }
 
