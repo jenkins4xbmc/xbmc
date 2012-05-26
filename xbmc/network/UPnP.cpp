@@ -115,22 +115,11 @@ CUPnP* CUPnP::upnp = NULL;
 // change to false for XBMC_PC if you want real UPnP functionality
 // otherwise keep to true for xbox as it doesn't support multicast
 // don't change unless you know what you're doing!
+//TODO research the implications of changing this
 bool CUPnP::broadcast = true;
 
 namespace
 {
-  static const NPT_String JoinString(const NPT_List<NPT_String>& array, const NPT_String& delimiter)
-  {
-    NPT_String result;
-
-    for(NPT_List<NPT_String>::Iterator it = array.GetFirstItem(); it; it++ )
-        result += delimiter + (*it);
-
-    if(result.IsEmpty())
-        return "";
-    else
-        return result.SubString(delimiter.GetLength());
-  }
 
   enum EClientQuirks
   {
@@ -222,10 +211,7 @@ class CUPnPServer : public PLT_MediaConnect
 {
 public:
     CUPnPServer(const char* friendly_name, const char* uuid = NULL, int port = 0) :
-        PLT_MediaConnect("", friendly_name, false, uuid, port) {
-        // hack: override path to make sure it's empty
-        // urls will contain full paths to local files
-        m_Path = "";
+        PLT_MediaConnect(friendly_name, false, uuid, port) {
     }
 
     // PLT_MediaServer methods
@@ -331,7 +317,7 @@ NPT_UInt32 CUPnPServer::m_MaxReturnedItems = 0;
 /*----------------------------------------------------------------------
 |   CUPnPServer::BuildSafeResourceUri
 +---------------------------------------------------------------------*/
-NPT_String CUPnPServer::BuildSafeResourceUri(const char* host, 
+NPT_String CUPnPServer::BuildSafeResourceUri(const char* host,
                                              const char* file_path)
 {
     CStdString md5;
@@ -342,7 +328,8 @@ NPT_String CUPnPServer::BuildSafeResourceUri(const char* host,
     { NPT_AutoLock lock(m_FileMutex);
       NPT_CHECK(m_FileMap.Put(md5.c_str(), file_path));
     }
-    return PLT_FileMediaServer::BuildSafeResourceUri(m_FileBaseUri, host, md5);
+    //TODO check root of URIs
+    return PLT_FileMediaServer::BuildSafeResourceUri("", host, md5);
 }
 
 
@@ -357,7 +344,7 @@ CUPnPServer::GetMimeType(const char* filename,
     ext.TrimLeft('.');
     ext = ext.ToLowercase();
 
-    return PLT_MediaObject::GetMimeTypeFromExtension(ext, context);
+    return PLT_MimeType::GetMimeTypeFromExtension(ext, context);
 }
 
 /*----------------------------------------------------------------------
@@ -374,6 +361,7 @@ CUPnPServer::GetMimeType(const CFileItem& item,
         path = item.GetMusicInfoTag()->GetURL();
     }
 
+    //FIXME is this correct?
     if(path.Left(8).Equals("stack://"))
       return "audio/x-mpegurl";
 
@@ -387,7 +375,7 @@ CUPnPServer::GetMimeType(const CFileItem& item,
        as it is defined to map extension to DLNA compliant mime type
        or custom according to context (who asked for it) */
     if (!ext.IsEmpty()) {
-        mime = PLT_MediaObject::GetMimeTypeFromExtension(ext, context);
+        mime = PLT_MimeType::GetMimeTypeFromExtension(ext, context);
         if (mime == "application/octet-stream") mime = "";
     }
 
@@ -443,7 +431,7 @@ CUPnPServer::GetProtocolInfo(const CFileItem&              item,
 
     /* we need a valid extension to retrieve the mimetype for the protocol info */
     NPT_String mime = GetMimeType(item, context);
-    proto += ":*:" + mime + ":" + PLT_MediaObject::GetDlnaExtension(mime, context);
+    proto += ":*:" + mime + ":" + PLT_ProtocolInfo::GetDlnaExtension(mime, context);
     return proto;
 }
 
@@ -462,7 +450,7 @@ CUPnPServer::PopulateObjectFromTag(CMusicInfoTag&         tag,
 
     std::vector<std::string> genres = tag.GetGenre();
     for (unsigned int index = 0; index < genres.size(); index++)
-      object.m_Affiliation.genre.Add(genres.at(index).c_str());
+      object.m_Affiliation.genres.Add(genres.at(index).c_str());
     object.m_Title = tag.GetTitle();
     object.m_Affiliation.album = tag.GetAlbum();
     for (unsigned int index = 0; index < tag.GetArtist().size(); index++)
@@ -535,7 +523,7 @@ CUPnPServer::PopulateObjectFromTag(CVideoInfoTag&         tag,
         object.m_ReferenceID = "";
 
     for (unsigned int index = 0; index < tag.m_genre.size(); index++)
-      object.m_Affiliation.genre.Add(tag.m_genre.at(index).c_str());
+      object.m_Affiliation.genres.Add(tag.m_genre.at(index).c_str());
 
     for(CVideoInfoTag::iCast it = tag.m_cast.begin();it != tag.m_cast.end();it++) {
         object.m_People.actors.Add(it->strName.c_str(), it->strRole.c_str());
@@ -748,7 +736,7 @@ CUPnPServer::BuildObject(const CFileItem&              item,
                     container->m_Date = tag.m_firstAired.GetAsLocalizedDate();
 
                   for (unsigned int index = 0; index < tag.m_genre.size(); index++)
-                    container->m_Affiliation.genre.Add(tag.m_genre.at(index).c_str());
+                    container->m_Affiliation.genres.Add(tag.m_genre.at(index).c_str());
 
                   for(CVideoInfoTag::iCast it = tag.m_cast.begin();it != tag.m_cast.end();it++) {
                       container->m_People.actors.Add(it->strName.c_str(), it->strRole.c_str());
@@ -777,8 +765,8 @@ CUPnPServer::BuildObject(const CFileItem&              item,
         /* Get the number of children for this container */
         if (with_count && upnp_server) {
             if (object->m_ObjectID.StartsWith("virtualpath://")) {
-                NPT_Cardinal count = 0;
-                NPT_CHECK_LABEL(NPT_File::GetCount(file_path, count), failure);
+                NPT_LargeSize count = 0;
+                NPT_CHECK_LABEL(NPT_File::GetSize(file_path, count), failure);
                 container->m_ChildrenCount = count;
             } else {
                 /* this should be a standard path */
@@ -802,16 +790,18 @@ CUPnPServer::BuildObject(const CFileItem&              item,
     }
     // set a thumbnail if we have one
     if (item.HasThumbnail() && upnp_server) {
-        object->m_ExtraInfo.album_art_uri = upnp_server->BuildSafeResourceUri(
+	PLT_AlbumArtInfo art;
+        art.uri = upnp_server->BuildSafeResourceUri(
             (*ips.GetFirstItem()).ToString(),
             item.GetThumbnailImage());
         // Set DLNA profileID by extension, defaulting to JPEG.
         NPT_String ext = URIUtils::GetExtension(item.GetThumbnailImage()).c_str();
         if (strcmp(ext, ".png") == 0) {
-            object->m_ExtraInfo.album_art_uri_dlna_profile = "PNG_TN";
+            art.dlna_profile = "PNG_TN";
         } else {
-            object->m_ExtraInfo.album_art_uri_dlna_profile = "JPEG_TN";
+            art.dlna_profile = "JPEG_TN";
         }
+	object->m_ExtraInfo.album_arts.Add(art);
     }
 
     if (upnp_server) {
@@ -1395,9 +1385,14 @@ CUPnPServer::ServeFile(NPT_HttpRequest&              request,
     }
 
     // File requested
-    NPT_String path = m_FileBaseUri.GetPath();
+    //FIXME default uri 0.0.0.0:PORT not set via PLT_MediaConnect ctor anymore, see
+    //if stacked files borken
+
+    /*NPT_String path = m_FileBaseUri.GetPath();
+
     if (path.Compare(request.GetUrl().GetPath().Left(path.GetLength()), true) == 0 &&
-        file_path.Left(8).Compare("stack://", true) == 0) {
+        file_path.Left(8).Compare("stack://", true) == 0) {*/
+    if (file_path.Left(8).Compare("stack://", true) == 0) {
 
         NPT_List<NPT_String> files = file_path.SubString(8).Split(" , ");
         if (files.GetItemCount() == 0) {
@@ -1419,7 +1414,6 @@ CUPnPServer::ServeFile(NPT_HttpRequest&              request,
             output += "\r\n";
         }
 
-        PLT_HttpHelper::SetContentType(response, "audio/x-mpegurl");
         PLT_HttpHelper::SetBody(response, (const char*)output, output.GetLength());
         response.GetHeaders().SetHeader("Content-Disposition", "inline; filename=\"stack.m3u\"");
         return NPT_SUCCESS;
@@ -1431,7 +1425,7 @@ CUPnPServer::ServeFile(NPT_HttpRequest&              request,
       response.GetHeaders().SetHeader("Content-Disposition", disp.c_str());
     }
 
-    return PLT_MediaConnect::ServeFile(request,
+    return PLT_HttpServer::ServeFile(request,
                                        context,
                                        response,
                                        file_path);
@@ -1469,7 +1463,7 @@ public:
     virtual NPT_Result OnSetMute(PLT_ActionReference& action);
 
 private:
-    NPT_Result SetupServices(PLT_DeviceData& data);
+    NPT_Result SetupServices();
     NPT_Result GetMetadata(NPT_String& meta);
     NPT_Result PlayMedia(const char* uri,
                          const char* metadata = NULL,
@@ -1495,9 +1489,9 @@ CUPnPRenderer::CUPnPRenderer(const char*  friendly_name,
 |   CUPnPRenderer::SetupServices
 +---------------------------------------------------------------------*/
 NPT_Result
-CUPnPRenderer::SetupServices(PLT_DeviceData& data)
+CUPnPRenderer::SetupServices()
 {
-    NPT_CHECK(PLT_MediaRenderer::SetupServices(data));
+    NPT_CHECK(PLT_MediaRenderer::SetupServices());
 
     // update what we can play
     PLT_Service* service = NULL;
@@ -1643,7 +1637,7 @@ CUPnPRenderer::ProcessHttpRequest(NPT_HttpRequest&              request,
         }
     }
 
-    return PLT_MediaRenderer::ProcessHttpRequest(request, context, response);
+    return PLT_MediaRenderer::ProcessHttpGetRequest(request, context, response);
 }
 
 /*----------------------------------------------------------------------
@@ -1771,11 +1765,14 @@ CUPnPRenderer::GetMetadata(NPT_String& meta)
         // build url, use the internal device http server to serv the image
         NPT_HttpUrlQuery query;
         query.AddField("path", thumb.c_str());
-        object->m_ExtraInfo.album_art_uri = NPT_HttpUrl(
+	PLT_AlbumArtInfo art;
+	art.uri = NPT_HttpUrl(
             ip,
             m_URLDescription.GetPort(),
             "/thumb.jpg",
             query.ToString()).ToString();
+        art.dlna_profile = "JPEG_TN";
+	object->m_ExtraInfo.album_arts.Add(art);
 
         res = PLT_Didl::ToDidl(*object, "*", meta);
         delete object;
@@ -1943,7 +1940,7 @@ CUPnPRenderer::PlayMedia(const char* uri, const char* meta, PLT_Action* action)
         item.m_strTitle = (const char*)object->m_Title;
         item.SetLabel((const char*)object->m_Title);
         item.SetLabelPreformated(true);
-        item.SetThumbnailImage((const char*)object->m_ExtraInfo.album_art_uri);
+        item.SetThumbnailImage((const char*)object->m_ExtraInfo.album_arts.GetItem(0)->uri);
         if (object->m_ObjectClass.type.StartsWith("object.item.audioItem")) {
             if(NPT_SUCCEEDED(CUPnP::PopulateTagFromObject(*item.GetMusicInfoTag(), *object, res)))
                 item.SetLabelPreformated(false);
@@ -2101,7 +2098,8 @@ CUPnP::CUPnP() :
     broadcast = false;
 
     // initialize upnp in broadcast listening mode for xbmc
-    m_UPnP = new PLT_UPnP(1900, !broadcast);
+    //m_UPnP = new PLT_UPnP(1900, !broadcast);
+    m_UPnP = new PLT_UPnP();
 
     // keep main IP around
     if (g_application.getNetwork().GetFirstConnectedInterface()) {
@@ -2397,7 +2395,10 @@ int CUPnP::PopulateTagFromObject(CMusicInfoTag&          tag,
         else if(it->role == "AlbumArtist") tag.SetAlbumArtist((const char*)it->name);
     }
     tag.SetTrackNumber(object.m_MiscInfo.original_track_number);
-    tag.SetGenre((const char*)JoinString(object.m_Affiliation.genre, " / "));
+
+    for (NPT_List<NPT_String>::Iterator it = object.m_Affiliation.genres.GetFirstItem(); it; it++)
+        tag.SetGenre((const char*) *it);
+
     tag.SetAlbum((const char*)object.m_Affiliation.album);
     if(resource)
         tag.SetDuration(resource->m_Duration);
@@ -2434,8 +2435,8 @@ int CUPnP::PopulateTagFromObject(CVideoInfoTag&         tag,
         tag.m_premiered    = date;
     }
     tag.m_iYear       = date.GetYear();
-    for (unsigned int index = 0; index < object.m_Affiliation.genre.GetItemCount(); index++)
-      tag.m_genre.push_back(object.m_Affiliation.genre.GetItem(index)->GetChars());
+    for (unsigned int index = 0; index < object.m_Affiliation.genres.GetItemCount(); index++)
+      tag.m_genre.push_back(object.m_Affiliation.genres.GetItem(index)->GetChars());
     tag.m_director = StringUtils::Split((CStdString)object.m_People.director, g_advancedSettings.m_videoItemSeparator);
     tag.m_strTagLine  = object.m_Description.description;
     tag.m_strPlot     = object.m_Description.long_description;
