@@ -207,11 +207,13 @@ public:
 /*----------------------------------------------------------------------
 |   CUPnP::CUPnP
 +---------------------------------------------------------------------*/
-class CUPnPServer : public PLT_MediaConnect
+class CUPnPServer : public PLT_MediaConnect,
+                    public PLT_FileMediaConnectDelegate
 {
 public:
     CUPnPServer(const char* friendly_name, const char* uuid = NULL, int port = 0) :
-        PLT_MediaConnect(friendly_name, false, uuid, port) {
+        PLT_MediaConnect(friendly_name, false, uuid, port),
+        PLT_FileMediaConnectDelegate("/", "/") {
     }
 
     // PLT_MediaServer methods
@@ -220,14 +222,14 @@ public:
                                         const char*                   filter,
                                         NPT_UInt32                    starting_index,
                                         NPT_UInt32                    requested_count,
-                                        const NPT_List<NPT_String>&   sort_criteria,
+                                        const char*                   sort_criteria,
                                         const PLT_HttpRequestContext& context);
     virtual NPT_Result OnBrowseDirectChildren(PLT_ActionReference&          action,
                                               const char*                   object_id,
                                               const char*                   filter,
                                               NPT_UInt32                    starting_index,
                                               NPT_UInt32                    requested_count,
-                                              const NPT_List<NPT_String>&   sort_criteria,
+                                              const char*                   sort_criteria,
                                               const PLT_HttpRequestContext& context);
     virtual NPT_Result OnSearchContainer(PLT_ActionReference&          action,
                                          const char*                   container_id,
@@ -235,11 +237,11 @@ public:
                                          const char*                   filter,
                                          NPT_UInt32                    starting_index,
                                          NPT_UInt32                    requested_count,
-                                         const NPT_List<NPT_String>&   sort_criteria,
+                                         const char*                   sort_criteria,
                                          const PLT_HttpRequestContext& context);
 
     // PLT_FileMediaServer methods
-    virtual NPT_Result ServeFile(NPT_HttpRequest&              request,
+    virtual NPT_Result ServeFile(const NPT_HttpRequest&              request,
                                  const NPT_HttpRequestContext& context,
                                  NPT_HttpResponse&             response,
                                  const NPT_String&             file_path);
@@ -260,15 +262,16 @@ public:
                                         bool                          with_count,
                                         const PLT_HttpRequestContext* context = NULL,
                                         CUPnPServer*                  upnp_server = NULL);
-    NPT_String BuildSafeResourceUri(const char*        host,
+    NPT_String BuildSafeResourceUri(const NPT_HttpUrl &rooturi,
+                                    const char*        host,
                                     const char*        file_path);
 
-    void AddSafeResourceUri(PLT_MediaObject* object, NPT_List<NPT_IpAddress> ips, const char* file_path, const NPT_String& info)
+    void AddSafeResourceUri(PLT_MediaObject* object, const NPT_HttpUrl& rooturi, NPT_List<NPT_IpAddress> ips, const char* file_path, const NPT_String& info)
     {
         PLT_MediaItemResource res;
         for(NPT_List<NPT_IpAddress>::Iterator ip = ips.GetFirstItem(); ip; ++ip) {
             res.m_ProtocolInfo = PLT_ProtocolInfo(info);
-            res.m_Uri          = BuildSafeResourceUri((*ip).ToString(), file_path);
+            res.m_Uri          = BuildSafeResourceUri(rooturi, (*ip).ToString(), file_path);
             object->m_Resources.Add(res);
         }
     }
@@ -289,7 +292,7 @@ private:
                                    const char*                   filter,
                                    NPT_UInt32                    starting_index,
                                    NPT_UInt32                    requested_count,
-                                   const NPT_List<NPT_String>&   sort_criteria,
+                                   const char*                   sort_criteria,
                                    const PLT_HttpRequestContext& context,
                                    const char*                   parent_id /* = NULL */);
 
@@ -317,7 +320,8 @@ NPT_UInt32 CUPnPServer::m_MaxReturnedItems = 0;
 /*----------------------------------------------------------------------
 |   CUPnPServer::BuildSafeResourceUri
 +---------------------------------------------------------------------*/
-NPT_String CUPnPServer::BuildSafeResourceUri(const char* host,
+NPT_String CUPnPServer::BuildSafeResourceUri(const NPT_HttpUrl &rooturi,
+                                             const char* host,
                                              const char* file_path)
 {
     CStdString md5;
@@ -328,8 +332,7 @@ NPT_String CUPnPServer::BuildSafeResourceUri(const char* host,
     { NPT_AutoLock lock(m_FileMutex);
       NPT_CHECK(m_FileMap.Put(md5.c_str(), file_path));
     }
-    //TODO check root of URIs
-    return PLT_FileMediaServer::BuildSafeResourceUri("", host, md5);
+    return PLT_FileMediaServer::BuildSafeResourceUri(rooturi, host, md5.c_str());
 }
 
 
@@ -576,11 +579,13 @@ CUPnPServer::BuildObject(const CFileItem&              item,
 
     // get list of ip addresses
     NPT_List<NPT_IpAddress> ips;
+    NPT_HttpUrl rooturi;
     NPT_CHECK_LABEL(PLT_UPnPMessageHelper::GetIPAddresses(ips), failure);
 
     // if we're passed an interface where we received the request from
     // move the ip to the top
     if (context && context->GetLocalAddress().GetIpAddress().ToString() != "0.0.0.0") {
+        rooturi = NPT_HttpUrl(context->GetLocalAddress().GetIpAddress().ToString(), context->GetLocalAddress().GetPort(), "/");
         ips.Remove(context->GetLocalAddress().GetIpAddress());
         ips.Insert(ips.GetFirstItem(), context->GetLocalAddress().GetIpAddress());
     }
@@ -632,7 +637,7 @@ CUPnPServer::BuildObject(const CFileItem&              item,
         }
 
         if (upnp_server) {
-            upnp_server->AddSafeResourceUri(object, ips, file_path, GetProtocolInfo(item, "http", context));
+            upnp_server->AddSafeResourceUri(object, rooturi, ips, file_path, GetProtocolInfo(item, "http", context));
         }
 
         // if the item is remote, add a direct link to the item
@@ -792,6 +797,7 @@ CUPnPServer::BuildObject(const CFileItem&              item,
     if (item.HasThumbnail() && upnp_server) {
 	PLT_AlbumArtInfo art;
         art.uri = upnp_server->BuildSafeResourceUri(
+            rooturi,
             (*ips.GetFirstItem()).ToString(),
             item.GetThumbnailImage());
         // Set DLNA profileID by extension, defaulting to JPEG.
@@ -806,7 +812,7 @@ CUPnPServer::BuildObject(const CFileItem&              item,
 
     if (upnp_server) {
         if (item.HasProperty("fanart_image")) {
-            upnp_server->AddSafeResourceUri(object, ips, item.GetProperty("fanart_image").asString().c_str(), "xbmc.org:*:fanart:*");
+            upnp_server->AddSafeResourceUri(object, rooturi, ips, item.GetProperty("fanart_image").asString().c_str(), "xbmc.org:*:fanart:*" );
         }
     }
 
@@ -980,7 +986,7 @@ CUPnPServer::OnBrowseMetadata(PLT_ActionReference&          action,
                               const char*                   filter,
                               NPT_UInt32                    starting_index,
                               NPT_UInt32                    requested_count,
-                              const NPT_List<NPT_String>&   sort_criteria,
+                              const char*                   sort_criteria,
                               const PLT_HttpRequestContext& context)
 {
     NPT_COMPILER_UNUSED(sort_criteria);
@@ -1058,13 +1064,13 @@ CUPnPServer::OnBrowseDirectChildren(PLT_ActionReference&          action,
                                     const char*                   filter,
                                     NPT_UInt32                    starting_index,
                                     NPT_UInt32                    requested_count,
-                                    const NPT_List<NPT_String>&   sort_criteria,
+                                    const char*                   sort_criteria,
                                     const PLT_HttpRequestContext& context)
 {
     CFileItemList items;
     NPT_String    parent_id = TranslateWMPObjectId(object_id);
 
-    CLog::Log(LOGINFO, "Received UPnP Browse DirectChildren request for object '%s'", (const char*)object_id);
+    CLog::Log(LOGINFO, "UPnP: Received Browse DirectChildren request for object '%s', with sort criteria %s", object_id, sort_criteria);
 
     items.SetPath(CStdString(parent_id));
     if (!items.Load()) {
@@ -1122,7 +1128,7 @@ CUPnPServer::BuildResponse(PLT_ActionReference&          action,
                            const char*                   filter,
                            NPT_UInt32                    starting_index,
                            NPT_UInt32                    requested_count,
-                           const NPT_List<NPT_String>&   sort_criteria,
+                           const char*                   sort_criteria,
                            const PLT_HttpRequestContext& context,
                            const char*                   parent_id /* = NULL */)
 {
@@ -1204,7 +1210,7 @@ CUPnPServer::OnSearchContainer(PLT_ActionReference&          action,
                                const char*                   filter,
                                NPT_UInt32                    starting_index,
                                NPT_UInt32                    requested_count,
-                               const NPT_List<NPT_String>&   sort_criteria,
+                               const char*                   sort_criteria,
                                const PLT_HttpRequestContext& context)
 {
     CLog::Log(LOGDEBUG, "Received Search request for object '%s' with search '%s'",
@@ -1366,7 +1372,7 @@ CUPnPServer::OnSearchContainer(PLT_ActionReference&          action,
 |   CUPnPServer::ServeFile
 +---------------------------------------------------------------------*/
 NPT_Result
-CUPnPServer::ServeFile(NPT_HttpRequest&              request,
+CUPnPServer::ServeFile(const NPT_HttpRequest&              request,
                        const NPT_HttpRequestContext& context,
                        NPT_HttpResponse&             response,
                        const NPT_String&             md5)
@@ -1385,13 +1391,8 @@ CUPnPServer::ServeFile(NPT_HttpRequest&              request,
     }
 
     // File requested
-    //FIXME default uri 0.0.0.0:PORT not set via PLT_MediaConnect ctor anymore, see
-    //if stacked files borken
+    NPT_HttpUrl rooturi(context.GetLocalAddress().GetIpAddress().ToString(), context.GetLocalAddress().GetPort(), "/");
 
-    /*NPT_String path = m_FileBaseUri.GetPath();
-
-    if (path.Compare(request.GetUrl().GetPath().Left(path.GetLength()), true) == 0 &&
-        file_path.Left(8).Compare("stack://", true) == 0) {*/
     if (file_path.Left(8).Compare("stack://", true) == 0) {
 
         NPT_List<NPT_String> files = file_path.SubString(8).Split(" , ");
@@ -1409,6 +1410,7 @@ CUPnPServer::ServeFile(NPT_HttpRequest&              request,
             output += "#EXTINF:-1," + URIUtils::GetFileName((const char*)*url);
             output += "\r\n";
             output += BuildSafeResourceUri(
+                          rooturi,
                           context.GetLocalAddress().GetIpAddress().ToString(),
                           *url);
             output += "\r\n";
@@ -2226,6 +2228,7 @@ CUPnP::CreateServer(int port /* = 0 */)
     device->m_Manufacturer     = "Team XBMC";
     device->m_ManufacturerURL  = "http://www.xbmc.org/";
 
+    device->SetDelegate(device);
     return device;
 }
 
