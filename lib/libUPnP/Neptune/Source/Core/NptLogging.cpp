@@ -166,7 +166,7 @@ public:
 
 #define NPT_LOG_UDP_HANDLER_DEFAULT_PORT            7724
 
-#if defined(_WIN32) || defined(_WIN32_WCE) || defined(__APPLE__)
+#if defined(_WIN32) || defined(_WIN32_WCE) || defined(TARGET_DARWIN)
 #define NPT_LOG_CONSOLE_HANDLER_DEFAULT_COLOR_MODE false
 #else
 #define NPT_LOG_CONSOLE_HANDLER_DEFAULT_COLOR_MODE true

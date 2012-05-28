@@ -26,7 +26,7 @@
 #include "filesystem/Directory.h"
 #include "filesystem/File.h"
 #include "interfaces/python/XBPython.h"
-#ifdef __APPLE__
+#ifdef TARGET_DARWIN
 #include "../osx/OSXGNUReplacements.h"
 #endif
 #ifdef __FreeBSD__

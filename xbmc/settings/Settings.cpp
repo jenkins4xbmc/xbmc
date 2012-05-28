@@ -106,7 +106,7 @@ void CSettings::Initialize()
   // internal music extensions
   m_musicExtensions += "|.sidstream|.oggstream|.nsfstream|.asapstream|.cdda";
 
-  #ifdef __APPLE__
+  #ifdef TARGET_DARWIN
     CStdString logDir = getenv("HOME");
     logDir += "/Library/Logs/";
     m_logFolder = logDir;

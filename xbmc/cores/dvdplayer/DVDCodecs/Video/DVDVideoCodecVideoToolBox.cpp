@@ -1503,7 +1503,7 @@ CDVDVideoCodecVideoToolBox::CreateVTSession(int width, int height, CMFormatDescr
   VTDecompressionOutputCallback outputCallback;
   OSStatus status;
 
-  #if defined(__arm__)
+  #if defined(TARGET_DARWIN_IOS)
     // decoding, scaling and rendering above 1920 x 800 runs into
     // some bandwidth limit. detect and scale down to reduce
     // the bandwidth requirements.

@@ -156,7 +156,7 @@
 #if defined(__QNXNTO__)
   #include <sys/param.h>
 #endif
-#if defined(__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined(__APPLE__)
+#if defined(__FreeBSD__) || defined (__NetBSD__) || defined (__OpenBSD__) || defined(TARGET_DARWIN)
   #include <sys/param.h>
   #include <sys/mount.h>
 #else

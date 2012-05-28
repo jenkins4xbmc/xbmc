@@ -24,7 +24,7 @@ typedef unsigned short     u16;
 typedef unsigned long      u32;
 typedef unsigned long long u64;
 typedef          long long s64;
-#ifdef __APPLE__
+#ifdef TARGET_DARWIN
 #define U64F "q"
 #else
 #define U64F "ll"

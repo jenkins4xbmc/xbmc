@@ -18,7 +18,7 @@
  */
 
 #include <netdb.h>
-#ifdef __APPLE__
+#ifdef TARGET_DARWIN
 /* Needed on Mac OS/X */
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP

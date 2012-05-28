@@ -28,7 +28,7 @@
 #include "utils/log.h"
 #include "utils/TimeUtils.h"
 #include "URL.h"
-#ifdef __APPLE__
+#ifdef TARGET_DARWIN
 #include "OSXGNUReplacements.h" // strnlen
 #endif
 #ifdef __FreeBSD__

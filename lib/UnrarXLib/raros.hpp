@@ -36,7 +36,7 @@
   #define _BEOS
 #endif
 
-#ifdef __APPLE__
+#ifdef TARGET_DARWIN
   #define _UNIX
   #define _APPLE
 #endif

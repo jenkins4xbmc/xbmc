@@ -37,7 +37,7 @@
 #define ts_mutex      pthread_mutex_t
 #define ts_condition  pthread_cond_t
 
-#if defined(__APPLE__) || defined(__FreeBSD__)
+#if defined(TARGET_DARWIN) || defined(__FreeBSD__)
 	#define PTHREAD_MUTEX_RECURSIVE_NP PTHREAD_MUTEX_RECURSIVE 
 #endif 
 	

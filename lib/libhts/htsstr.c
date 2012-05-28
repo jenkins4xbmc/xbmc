@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef __APPLE__
+#ifdef TARGET_DARWIN
 #include "OSXGNUReplacements.h"
 #elif defined(_MSC_VER)
 #include "msvc.h"
