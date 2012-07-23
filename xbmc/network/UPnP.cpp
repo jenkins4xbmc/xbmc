@@ -241,6 +241,12 @@ public:
                                  NPT_HttpResponse&             response,
                                  const NPT_String&             file_path);
 
+    // PLT_DeviceHost methods
+    virtual NPT_Result ProcessGetSCPD(PLT_Service*                  service,
+                                      NPT_HttpRequest&              request,
+                                      const NPT_HttpRequestContext& context,
+                                      NPT_HttpResponse&             response);
+
     // class methods
     static NPT_Result PopulateObjectFromTag(CMusicInfoTag&         tag,
                                             PLT_MediaObject&       object,
@@ -311,6 +317,19 @@ public:
 };
 
 NPT_UInt32 CUPnPServer::m_MaxReturnedItems = 0;
+
+/*----------------------------------------------------------------------
+|   CUPnPServer::ProcessGetSCPD
++---------------------------------------------------------------------*/
+NPT_Result
+CUPnPServer::ProcessGetSCPD(PLT_Service*                  service,
+                            NPT_HttpRequest&              request,
+                            const NPT_HttpRequestContext& context,
+                            NPT_HttpResponse&             response)
+{
+  // needed because PLT_MediaConnect only allows Xbox360 & WMP to search
+  return PLT_MediaServer::ProcessGetSCPD(service, request, context, response);
+}
 
 /*----------------------------------------------------------------------
 |   CUPnPServer::BuildSafeResourceUri
