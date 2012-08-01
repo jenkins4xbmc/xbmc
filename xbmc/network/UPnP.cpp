@@ -29,6 +29,7 @@
 #include "utils/log.h"
 #include "filesystem/MusicDatabaseDirectory.h"
 #include "filesystem/VideoDatabaseDirectory.h"
+#include "filesystem/StackDirectory.h"
 #include "music/MusicDatabase.h"
 #include "video/VideoDatabase.h"
 #include "filesystem/VideoDatabaseDirectory/DirectoryNode.h"
@@ -378,9 +379,8 @@ CUPnPServer::GetMimeType(const CFileItem& item,
         path = item.GetMusicInfoTag()->GetURL();
     }
 
-    //FIXME is this correct?
-    if(path.Left(8).Equals("stack://"))
-      return "audio/x-mpegurl";
+    if (URIUtils::IsStack(path))
+        path = CStackDirectory::GetFirstStackedFile(path);
 
     NPT_String ext = URIUtils::GetExtension(path).c_str();
     ext.TrimLeft('.');
