@@ -1153,6 +1153,7 @@ lib/cmyth/Makefile
 
 # /xbmc/network/
 /xbmc/network/Makefile
+/xbmc/network/upnp/Makefile
 
 /lib/python/Makefile
 /lib/python/Include/pyconfig.h
