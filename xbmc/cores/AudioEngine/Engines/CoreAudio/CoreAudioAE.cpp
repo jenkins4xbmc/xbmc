@@ -41,6 +41,9 @@
 CCoreAudioAE::CCoreAudioAE() :
   m_Initialized        (false         ),
   m_callbackRunning    (false         ),
+  m_lastStreamFormat   (AE_FMT_INVALID),
+  m_lastChLayoutCount  (0             ),
+  m_lastSampleRate     (0             ),
   m_chLayoutCount      (0             ),
   m_rawPassthrough     (false         ),
   m_volume             (1.0f          ),
@@ -425,10 +428,16 @@ IAEStream* CCoreAudioAE::MakeStream(enum AEDataFormat dataFormat,
   Stop();
 
   // reinit the engine if we switch from pcm to raw or vice versa
-  if (m_Initialized)
+  if (m_Initialized && ( m_lastStreamFormat != dataFormat ||
+                         m_lastChLayoutCount != channelLayout.Count() ||
+                         m_lastSampleRate != sampleRate ||
+                         COREAUDIO_IS_RAW(dataFormat)))
   {
     Deinitialize();
     m_Initialized = OpenCoreAudio(sampleRate, COREAUDIO_IS_RAW(dataFormat), dataFormat);
+    m_lastStreamFormat = dataFormat;
+    m_lastChLayoutCount = channelLayout.Count();
+    m_lastSampleRate = sampleRate;
   }
 
   /* if the stream was not initialized, do it now */

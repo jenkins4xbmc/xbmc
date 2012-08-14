@@ -145,6 +145,9 @@ private:
   bool              m_callbackRunning;
 
   AEAudioFormat     m_format;
+  enum AEDataFormat m_lastStreamFormat;
+  unsigned int      m_lastChLayoutCount;
+  unsigned int      m_lastSampleRate;
   unsigned int      m_chLayoutCount;
   bool              m_rawPassthrough;
 
