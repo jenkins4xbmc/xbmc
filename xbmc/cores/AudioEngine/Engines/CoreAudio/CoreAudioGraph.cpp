@@ -24,6 +24,7 @@
 #include "CoreAudioAEHAL.h"
 #include "CoreAudioMixMap.h"
 #include "CoreAudioUnit.h"
+#include "AEFactory.h"
 
 #include "utils/log.h"
 #include "utils/SystemInfo.h"
@@ -52,7 +53,7 @@ CCoreAudioGraph::~CCoreAudioGraph()
 }
 
 bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format,
-  AudioDeviceID deviceId, bool allowMixing, AudioChannelLayoutTag layoutTag)
+  AudioDeviceID deviceId, bool allowMixing, AudioChannelLayoutTag layoutTag, float initVolume)
 {
   AudioStreamBasicDescription fmt = {0};
   AudioStreamBasicDescription inputFormat = {0};
@@ -97,6 +98,8 @@ bool CCoreAudioGraph::Open(ICoreAudioSource *pSource, AEAudioFormat &format,
 
   if (!m_audioUnit->SetCurrentDevice(deviceId))
     return false;
+
+  SetCurrentVolume(initVolume);
 
   if (allowMixing)
   {
