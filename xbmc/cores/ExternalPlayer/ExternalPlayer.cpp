@@ -39,6 +39,7 @@
 #include "utils/log.h"
 #if defined(_WIN32)
   #include "Windows.h"
+  #include "cores\AudioEngine\AEFactory.h"
   #ifdef HAS_IRSERVERSUITE
     #include "input/windows/IRServerSuite.h"
   #endif
@@ -347,6 +348,11 @@ void CExternalPlayer::Process()
     CLog::Log(LOGNOTICE, "%s: Restoring cursor to (%d,%d)", __FUNCTION__, m_xPos, m_yPos);
     SetCursorPos(m_xPos,m_yPos);
   }
+
+  if (!CAEFactory::Resume())
+  {
+    CLog::Log(LOGFATAL, __FUNCTION__, "Failed to restart AudioEngine after return from external player");
+  }
 #endif
 
   // We don't want to come back to an active screensaver
@@ -375,6 +381,11 @@ BOOL CExternalPlayer::ExecuteAppW32(const char* strPath, const char* strSwitches
   g_charsetConverter.utf8ToW(strSwitches, WstrSwitches);
 
   if (m_bAbortRequest) return false;
+
+  if (!CAEFactory::Suspend())
+  {
+    CLog::Log(LOGNOTICE, __FUNCTION__, "Failed to suspend AudioEngine before launching external program");
+  }
 
   BOOL ret = CreateProcessW(WstrPath.IsEmpty() ? NULL : WstrPath.c_str(),
                             (LPWSTR) WstrSwitches.c_str(), NULL, NULL, FALSE, NULL,
