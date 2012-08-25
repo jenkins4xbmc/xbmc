@@ -349,6 +349,7 @@ void CExternalPlayer::Process()
     SetCursorPos(m_xPos,m_yPos);
   }
 
+  /* Resume AE processing of XBMC native audio */
   if (!CAEFactory::Resume())
   {
     CLog::Log(LOGFATAL, __FUNCTION__, "Failed to restart AudioEngine after return from external player");
@@ -382,6 +383,8 @@ BOOL CExternalPlayer::ExecuteAppW32(const char* strPath, const char* strSwitches
 
   if (m_bAbortRequest) return false;
 
+  /* Suspend AE temporarily so exclusive or hog-mode sinks */
+  /* don't block external player's access to audio device  */
   if (!CAEFactory::Suspend())
   {
     CLog::Log(LOGNOTICE, __FUNCTION__, "Failed to suspend AudioEngine before launching external program");
