@@ -1073,8 +1073,6 @@ int CSoftAE::RunOutputStage(bool hasAudio)
   /* Output frames to sink */
   if (m_sink)
     wroteFrames = m_sink->AddPackets((uint8_t*)data, m_sinkFormat.m_frames, hasAudio);
-  else
-    Sleep(50);
 
   /* Return value of INT_MAX signals error in sink - restart */
   if (wroteFrames == INT_MAX)
@@ -1092,7 +1090,7 @@ int CSoftAE::RunOutputStage(bool hasAudio)
 
 int CSoftAE::RunRawOutputStage(bool hasAudio)
 {
-  if((m_buffer.Used() < m_sinkBlockSize) || m_isSuspended)
+  if(m_buffer.Used() < m_sinkBlockSize)
     return 0;
 
   void *data = m_buffer.Raw(m_sinkBlockSize);
