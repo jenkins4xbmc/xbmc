@@ -37,9 +37,9 @@
 #include "utils/XMLUtils.h"
 #include "utils/TimeUtils.h"
 #include "utils/log.h"
+#include "cores/AudioEngine/AEFactory.h"
 #if defined(_WIN32)
   #include "Windows.h"
-  #include "cores\AudioEngine\AEFactory.h"
   #ifdef HAS_IRSERVERSUITE
     #include "input/windows/IRServerSuite.h"
   #endif
@@ -288,6 +288,15 @@ void CExternalPlayer::Process()
 #endif
 
   m_playbackStartTime = XbmcThreads::SystemClockMillis();
+
+  /* Suspend AE temporarily so exclusive or hog-mode sinks */
+  /* don't block external player's access to audio device  */
+  if (!CAEFactory::Suspend())
+  {
+    CLog::Log(LOGNOTICE, __FUNCTION__, "Failed to suspend AudioEngine before launching external program");
+  }
+
+
   BOOL ret = TRUE;
 #if defined(_WIN32)
   ret = ExecuteAppW32(strFName.c_str(),strFArgs.c_str());
@@ -348,13 +357,13 @@ void CExternalPlayer::Process()
     CLog::Log(LOGNOTICE, "%s: Restoring cursor to (%d,%d)", __FUNCTION__, m_xPos, m_yPos);
     SetCursorPos(m_xPos,m_yPos);
   }
+#endif
 
   /* Resume AE processing of XBMC native audio */
   if (!CAEFactory::Resume())
   {
     CLog::Log(LOGFATAL, __FUNCTION__, "Failed to restart AudioEngine after return from external player");
   }
-#endif
 
   // We don't want to come back to an active screensaver
   g_application.ResetScreenSaver();
@@ -382,13 +391,6 @@ BOOL CExternalPlayer::ExecuteAppW32(const char* strPath, const char* strSwitches
   g_charsetConverter.utf8ToW(strSwitches, WstrSwitches);
 
   if (m_bAbortRequest) return false;
-
-  /* Suspend AE temporarily so exclusive or hog-mode sinks */
-  /* don't block external player's access to audio device  */
-  if (!CAEFactory::Suspend())
-  {
-    CLog::Log(LOGNOTICE, __FUNCTION__, "Failed to suspend AudioEngine before launching external program");
-  }
 
   BOOL ret = CreateProcessW(WstrPath.IsEmpty() ? NULL : WstrPath.c_str(),
                             (LPWSTR) WstrSwitches.c_str(), NULL, NULL, FALSE, NULL,
