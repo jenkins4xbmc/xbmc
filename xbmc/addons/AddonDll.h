@@ -23,6 +23,7 @@
 #include "DllAddon.h"
 #include "AddonManager.h"
 #include "AddonStatusHandler.h"
+#include "AddonCallbacks.h"
 #include "settings/GUIDialogSettings.h"
 #include "utils/URIUtils.h"
 #include "filesystem/File.h"
@@ -59,6 +60,7 @@ namespace ADDON
     virtual bool LoadSettings();
     TheStruct* m_pStruct;
     TheProps*     m_pInfo;
+    CAddonCallbacks* m_pHelpers;
 
   private:
     TheDll* m_pDll;
@@ -112,6 +114,7 @@ CAddonDll<TheDll, TheStruct, TheProps>::CAddonDll(const AddonProps &props)
   m_initialized = false;
   m_pDll        = NULL;
   m_pInfo       = NULL;
+  m_pHelpers    = NULL;
   m_needsavedsettings = false;
 }
 
@@ -204,9 +207,15 @@ bool CAddonDll<TheDll, TheStruct, TheProps>::Create()
   if (!LoadDll())
     return false;
 
+  /* Allocate the helper function class to allow crosstalk over
+     helper libraries */
+  m_pHelpers = new CAddonCallbacks(this);
+
+  /* Call Create to make connections, initializing data or whatever is
+     needed to become the AddOn running */
   try
   {
-    ADDON_STATUS status = m_pDll->Create(NULL, m_pInfo);
+    ADDON_STATUS status = m_pDll->Create(m_pHelpers->GetCallbacks(), m_pInfo);
     if (status == ADDON_STATUS_OK)
       m_initialized = true;
     else if ((status == ADDON_STATUS_NEED_SETTINGS) || (status == ADDON_STATUS_NEED_SAVEDSETTINGS))
@@ -227,6 +236,9 @@ bool CAddonDll<TheDll, TheStruct, TheProps>::Create()
   {
     HandleException(e, "m_pDll->Create");
   }
+
+  if  (!m_initialized)
+    SAFE_DELETE(m_pHelpers);
 
   return m_initialized;
 }
@@ -283,6 +295,8 @@ void CAddonDll<TheDll, TheStruct, TheProps>::Destroy()
   {
     HandleException(e, "m_pDll->Unload");
   }
+  delete m_pHelpers;
+  m_pHelpers = NULL;
   free(m_pStruct);
   m_pStruct = NULL;
   if (m_pDll)
@@ -445,7 +459,8 @@ ADDON_STATUS CAddonDll<TheDll, TheStruct, TheProps>::TransferSettings()
         {
           status = m_pDll->SetSetting(id, (const char*) GetSetting(id).c_str());
         }
-        else if ((strcmpi(type, "enum") == 0 || strcmpi(type,"integer") == 0))
+        else if ((strcmpi(type, "enum") == 0 || strcmpi(type,"integer") == 0) ||
+          strcmpi(type, "labelenum") == 0 || strcmpi(type, "rangeofnum") == 0)
         {
           int tmp = atoi(GetSetting(id));
           status = m_pDll->SetSetting(id, (int*) &tmp);
