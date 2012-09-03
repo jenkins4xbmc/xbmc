@@ -38,6 +38,18 @@
 #define DEACELLERATION_DECREASE_FACTOR 0.9f
 //minimum speed for doing inertial scroll is 100 pixels / s
 #define MINIMUM_SPEED_FOR_INERTIA 100
+//if we don't get a pan after HOLDTIME_TO_ABORT ms after gesture_begin - stop scrolling (abort on hold/pan)
+#define HOLDTIME_TO_ABORT 300
+//maximum scrolling speed is 5000 pixels/s
+#define MAXIMUM_SPEED_FOR_INERTIA 5000
+
+//some defines for direction detection
+#define LEFT -1
+#define RIGHT 1
+#define UP -1
+#define DOWN 1
+#define NONE 0
+
 
 CInertialScrollingHandler::CInertialScrollingHandler()
 : m_bScrolling(false)
@@ -45,8 +57,51 @@ CInertialScrollingHandler::CInertialScrollingHandler()
 , m_iFlickVelocity(CPoint(0,0))
 , m_iLastGesturePoint(CPoint(0,0))
 , m_inertialDeacceleration(CPoint(0,0))
+, m_iLastDirection(CPoint(NONE,NONE))
 , m_inertialStartTime(0)
+, m_lastGestureBeginTime(0)
 {
+}
+
+inline bool CInertialScrollingHandler::directionHasChanged()
+{
+  bool ret = false;
+
+  // check if x direction has changed
+  if (m_iFlickVelocity.x < 0 && m_iLastDirection.x == RIGHT)
+    ret = true;
+
+  if (m_iFlickVelocity.x >= 0 && m_iLastDirection.x == LEFT)
+    ret = true;
+
+  if (m_iFlickVelocity.y < 0 && m_iLastDirection.y == DOWN)
+    ret = true;
+
+  if (m_iFlickVelocity.y >= 0 && m_iLastDirection.y == UP)
+    ret = true;
+
+  return ret;
+}
+
+void CInertialScrollingHandler::saveCurrentDirection()
+{
+  if (m_iFlickVelocity.y == 0)
+    m_iLastDirection.y = NONE;
+
+  if (m_iFlickVelocity.y < 0)
+    m_iLastDirection.y = UP;
+
+  if (m_iFlickVelocity.y > 0)
+    m_iLastDirection.y = DOWN;
+
+  if (m_iFlickVelocity.x == 0)
+    m_iLastDirection.x = NONE;
+
+  if (m_iFlickVelocity.x < 0)
+    m_iLastDirection.x = LEFT;
+
+  if (m_iFlickVelocity.x > 0)
+    m_iLastDirection.x = RIGHT;
 }
 
 bool CInertialScrollingHandler::CheckForInertialScrolling(const CAction* action)
@@ -75,12 +130,23 @@ bool CInertialScrollingHandler::CheckForInertialScrolling(const CAction* action)
   //on begin/tap stop all inertial scrolling
   if ( action->GetID() == ACTION_GESTURE_BEGIN )
   {
-    //release any former exclusive mouse mode
-    //for making switching between multiple lists
-    //possible
-    CGUIMessage message(GUI_MSG_EXCLUSIVE_MOUSE, 0, 0);
-    g_windowManager.SendMessage(message);
-    m_bScrolling = false;
+    unsigned int frameTime = CTimeUtils::GetFrameTime();
+
+    if (m_lastGestureBeginTime == 0)
+    {
+      m_lastGestureBeginTime = frameTime;
+    }
+
+    if (frameTime - m_lastGestureBeginTime > HOLDTIME_TO_ABORT)
+    {
+      //release any former exclusive mouse mode
+      //for making switching between multiple lists
+      //possible
+      CGUIMessage message(GUI_MSG_EXCLUSIVE_MOUSE, 0, 0);
+      g_windowManager.SendMessage(message);
+      m_bScrolling = false;
+    }
+
     //wakeup screensaver on pan begin
     g_application.ResetScreenSaver();
     g_application.WakeUpScreenSaverAndDPMS();
@@ -104,10 +170,21 @@ bool CInertialScrollingHandler::CheckForInertialScrolling(const CAction* action)
 
       if( inertialRequested )
       {
-        m_iFlickVelocity.x = action->GetAmount(0)/2;//in pixels per sec
-        m_iFlickVelocity.y = action->GetAmount(1)/2;//in pixels per sec
+        if (directionHasChanged())
+        {
+          m_iFlickVelocity.x = action->GetAmount(0)/2;//in pixels per sec
+          m_iFlickVelocity.y = action->GetAmount(1)/2;//in pixels per sec
+        }
+        else
+        {
+          //add up the velocity - incase we where swipped again while already scrolling
+          m_iFlickVelocity.x += action->GetAmount(0)/2;//in pixels per sec
+          m_iFlickVelocity.y += action->GetAmount(1)/2;//in pixels per sec
+        }
+
         m_iLastGesturePoint.x = action->GetAmount(2);//last gesture point x
         m_iLastGesturePoint.y = action->GetAmount(3);//last gesture point y
+        saveCurrentDirection();
 
         //calc deacceleration for fullstop in TIME_TO_ZERO_SPEED secs
         //v = a*t + v0 -> set v = 0 because we want to stop scrolling

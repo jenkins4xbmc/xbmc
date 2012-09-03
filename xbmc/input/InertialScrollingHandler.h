@@ -37,6 +37,8 @@ class CInertialScrollingHandler
   private:
     bool CheckForInertialScrolling(const CAction* action);
     bool ProcessInertialScroll(float frameTime);
+    bool directionHasChanged();
+    void saveCurrentDirection();
 
     //-------------------------------------------vars for inertial scrolling animation with gestures
     bool          m_bScrolling;        //flag indicating that we currently do the inertial scrolling emulation
@@ -44,5 +46,7 @@ class CInertialScrollingHandler
     CPoint        m_iFlickVelocity;
     CPoint        m_iLastGesturePoint;
     CPoint        m_inertialDeacceleration;
+    CPoint        m_iLastDirection;
     unsigned int  m_inertialStartTime;
+    unsigned int  m_lastGestureBeginTime;
 };
