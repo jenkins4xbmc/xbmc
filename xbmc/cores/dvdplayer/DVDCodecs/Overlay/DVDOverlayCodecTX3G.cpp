@@ -90,15 +90,14 @@ int CDVDOverlayCodecTX3G::Decode(DemuxPacket *pPacket)
 {
   if (m_pOverlay)
     SAFE_RELEASE(m_pOverlay);
-  
-  double pts = pPacket->dts != DVD_NOPTS_VALUE ? pPacket->dts : pPacket->pts;
-  double duration = pPacket->duration;
+
   BYTE *data = pPacket->pData;
   int size = pPacket->iSize;
 
   m_pOverlay = new CDVDOverlayText();
-  m_pOverlay->iPTSStartTime = pts;
-  m_pOverlay->iPTSStopTime  = pts + duration;
+  m_pOverlay->iPTSStartTime = 0;
+  m_pOverlay->iPTSStopTime  = 0;
+  CDVDOverlayCodec::GetAbsoluteTimes(m_pOverlay->iPTSStartTime, m_pOverlay->iPTSStopTime, pPacket);
 
   // do not move this. READ_XXXX macros modify pos.
   uint8_t  *pos = data;

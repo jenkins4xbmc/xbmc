@@ -67,7 +67,7 @@ int CDVDOverlayCodecText::Decode(DemuxPacket *pPacket)
   m_pOverlay = new CDVDOverlayText();
   m_pOverlay->iPTSStartTime = 0;
   m_pOverlay->iPTSStopTime = 0;
-
+  CDVDOverlayCodec::GetAbsoluteTimes(m_pOverlay->iPTSStartTime, m_pOverlay->iPTSStopTime, pPacket);
 
   char *start, *end, *p;
   start = (char*)data;
