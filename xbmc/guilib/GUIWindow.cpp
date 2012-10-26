@@ -117,7 +117,9 @@ bool CGUIWindow::Load(const CStdString& strFileName, bool bContainsPath)
     strPath = g_SkinInfo->GetSkinPath(strFileName, &m_coordsRes);
   }
 
+  CLog::Log(LOGDEBUG, "before LoadXML with strPath %s and strLowerPath %s", strPath.c_str(), strLowerPath.c_str());
   bool ret = LoadXML(strPath.c_str(), strLowerPath.c_str());
+  CLog::Log(LOGDEBUG, "after LoadXML with result %d", ret ? (int)1 : (int)0);
 
 #ifdef _DEBUG
   int64_t end, freq;

@@ -77,7 +77,28 @@ namespace XBMCAddon
     protected:
       // CGUIWindow
       virtual bool LoadXML(const CStdString &strPath, const CStdString &strPathLower)
-      { TRACE; return up() ? CGUIMediaWindow::LoadXML(strPath,strPathLower) : xwin->LoadXML(strPath,strPathLower); }
+      { 
+        TRACE; 
+        CLog::Log(LOGDEBUG, "enter interceptor LoadXML");
+        bool ret = up();
+        
+        CLog::Log(LOGDEBUG, "up returned %d", ret ? (int)1 : (int)0);
+        
+        if (ret)
+        {
+          CLog::Log(LOGDEBUG, "before CGUIMediaWindow::LoadXML");
+          ret = CGUIMediaWindow::LoadXML(strPath,strPathLower);
+          CLog::Log(LOGDEBUG, "after CGUIMediaWindow::LoadXML with ret %d", ret ? (int)1 : (int)0);
+        }
+        else
+        {
+          CLog::Log(LOGDEBUG, "before xwin->LoadXML");
+          ret = xwin->LoadXML(strPath,strPathLower); 
+          CLog::Log(LOGDEBUG, "after xwin->LoadXML with ret %d", ret ? (int)1 : (int)0);
+        }
+        CLog::Log(LOGDEBUG, "leave interceptor LoadXML");
+        return ret;
+      }
 
       // CGUIMediaWindow
       virtual void GetContextButtons(int itemNumber, CContextButtons &buttons)
