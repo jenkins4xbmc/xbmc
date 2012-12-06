@@ -612,6 +612,7 @@ void CGUISettings::Initialize()
     shutdown.insert(make_pair(13014,POWERSTATE_MINIMIZE));
     AddInt(pwm, "powermanagement.shutdownstate", 13008, POWERSTATE_QUIT, shutdown, SPIN_CONTROL_TEXT);
   }
+  AddBool(pwm, "powermanagement.wakeonaccess", 13026, false);
 
   CSettingsCategory* dbg = AddCategory(SETTINGS_SYSTEM, "debug", 14092);
   AddBool(dbg, "debug.showloginfo", 20191, false);

@@ -520,6 +520,63 @@ void CNetworkLinux::SetNameServers(std::vector<CStdString> nameServers)
 #endif
 }
 
+bool CNetworkLinux::PingHost(unsigned long remote_ip, unsigned int timeout_ms)
+{
+  char cmd_line [64];
+
+  struct in_addr host_ip; 
+  host_ip.s_addr = remote_ip;
+
+  sprintf(cmd_line, "ping -c 1 -w %d %s", timeout_ms / 1000 + (timeout_ms % 1000) != 0, inet_ntoa(host_ip));
+
+  int status = system (cmd_line);
+
+  int result = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+
+  // http://linux.about.com/od/commands/l/blcmdl8_ping.htm ;
+  // 0 reply
+  // 1 no reply
+  // else some error
+
+  if (result < 0 || result > 1)
+    CLog::Log(LOGERROR, "Ping fail : status = %d, errno = %d : '%s'", status, errno, cmd_line);
+
+  return result == 0;
+}
+
+bool CNetworkInterfaceLinux::GetHostMacAddress(unsigned long host_ip, CStdString& mac)
+{
+  struct arpreq areq;
+  struct sockaddr_in* sin;
+
+  memset(&areq, 0x0, sizeof(areq));
+
+  sin = (struct sockaddr_in *) &areq.arp_pa;
+  sin->sin_family = AF_INET;
+  sin->sin_addr.s_addr = host_ip;
+
+  sin = (struct sockaddr_in *) &areq.arp_ha;
+  sin->sin_family = ARPHRD_ETHER;
+
+  strncpy(areq.arp_dev, m_interfaceName.c_str(), sizeof(areq.arp_dev));
+  areq.arp_dev[sizeof(areq.arp_dev)-1] = '\0';
+
+  int result = ioctl (m_network->GetSocket(), SIOCGARP, (caddr_t) &areq);
+
+  if (result != 0)
+  {
+//  CLog::Log(LOGERROR, "%s - GetHostMacAddress/ioctl failed with errno (%d)", __FUNCTION__, errno);
+    return false;
+  }
+
+  struct sockaddr* res = &areq.arp_ha;
+  mac.Format("%02X:%02X:%02X:%02X:%02X:%02X", 
+    (uint8_t) res->sa_data[0], (uint8_t) res->sa_data[1], (uint8_t) res->sa_data[2], 
+    (uint8_t) res->sa_data[3], (uint8_t) res->sa_data[4], (uint8_t) res->sa_data[5]);
+
+  return true;
+}
+
 std::vector<NetworkAccessPoint> CNetworkInterfaceLinux::GetAccessPoints(void)
 {
    std::vector<NetworkAccessPoint> result;

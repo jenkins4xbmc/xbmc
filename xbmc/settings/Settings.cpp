@@ -55,6 +55,7 @@
 #include "filesystem/File.h"
 #include "filesystem/DirectoryCache.h"
 #include "DatabaseManager.h"
+#include "network/WakeOnAccess.h"
 
 using namespace std;
 using namespace XFILE;
@@ -179,6 +180,7 @@ bool CSettings::Load()
   LoadSources();
   LoadRSSFeeds();
   LoadUserFolderLayout();
+  CWakeOnAccess::Get().LoadFromXML();
 
   return true;
 }
@@ -1226,6 +1228,8 @@ bool CSettings::UpdateShare(const CStdString &type, const CStdString oldName, co
   if (!pShare)
     return false;
 
+  CWakeOnAccess::Get().QueueMACDiscoveryForShare(*pShare);
+
   // Update our XML file as well
   return SaveSources();
 }
@@ -1316,6 +1320,8 @@ bool CSettings::AddShare(const CStdString &type, const CMediaSource &share)
     }
   }
   pShares->push_back(shareToAdd);
+
+  CWakeOnAccess::Get().QueueMACDiscoveryForShare(shareToAdd);
 
   if (!share.m_ignore)
   {

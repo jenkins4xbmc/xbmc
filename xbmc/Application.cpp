@@ -5060,6 +5060,14 @@ void CApplication::Process()
   g_cpuInfo.getUsedPercentage(); // must call it to recalculate pct values
 }
 
+void CApplication::ProcessSlowEnable(bool enable)
+{
+  if (enable)
+    m_slowTimer.Start();
+  else
+    m_slowTimer.Stop();
+}
+
 // We get called every 500ms
 void CApplication::ProcessSlow()
 {

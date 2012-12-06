@@ -9,6 +9,7 @@ SRCS += Network.cpp
 SRCS += Socket.cpp
 SRCS += TCPServer.cpp
 SRCS += UdpClient.cpp
+SRCS += WakeOnAccess.cpp
 SRCS += WebServer.cpp
 SRCS += ZeroconfBrowser.cpp
 SRCS += Zeroconf.cpp

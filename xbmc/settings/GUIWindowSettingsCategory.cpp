@@ -82,6 +82,7 @@
 #include "filesystem/SpecialProtocol.h"
 
 #include "network/Zeroconf.h"
+#include "network/WakeOnAccess.h"
 #include "peripherals/Peripherals.h"
 #include "peripherals/dialogs/GUIDialogPeripheralManager.h"
 #include "peripherals/devices/PeripheralImon.h"
@@ -2003,6 +2004,12 @@ void CGUIWindowSettingsCategory::OnSettingChanged(CBaseSettingControl *pSettingC
         g_guiSettings.SetBool("pvrparental.enabled", false);
       }
     }
+  }
+  else if (strSetting.Equals("powermanagement.wakeonaccess"))
+  {
+    CWakeOnAccess& woa = CWakeOnAccess::Get();
+    woa.SetEnabled (g_guiSettings.GetBool("powermanagement.wakeonaccess"));
+    woa.QueueMACDiscoveryForAllRemotes();
   }
 
   UpdateSettings();

@@ -204,6 +204,7 @@ public:
 
   virtual void Process();
   void ProcessSlow();
+  void ProcessSlowEnable(bool enable);
   void ResetScreenSaver();
   int GetVolume() const;
   void SetVolume(float iValue, bool isPercentage = true);
