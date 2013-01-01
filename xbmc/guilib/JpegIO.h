@@ -37,11 +37,16 @@ public:
   ~CJpegIO();
   bool           Open(const CStdString& m_texturePath,  unsigned int minx=0, unsigned int miny=0, bool read=true);
   bool           Read(unsigned char* buffer, unsigned int bufSize, unsigned int minx, unsigned int miny);
-  bool           Decode(const unsigned char *pixels, unsigned int pitch, unsigned int format);
   bool           CreateThumbnail(const CStdString& sourceFile, const CStdString& destFile, int minx, int miny, bool rotateExif);
   bool           CreateThumbnailFromMemory(unsigned char* buffer, unsigned int bufSize, const CStdString& destFile, unsigned int minx, unsigned int miny);
   bool           CreateThumbnailFromSurface(unsigned char* buffer, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile);
   void           Close();
+  // methods for the imagefactory
+  virtual bool   Decode(const unsigned char *pixels, unsigned int pitch, unsigned int format);
+  virtual bool   LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height);
+  virtual bool   CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile, 
+                                            unsigned char* &bufferout, unsigned int &bufferoutSize);
+  virtual void   ReleaseThumbnailBuffer();
 
   unsigned int   Width()       { return m_width; }
   unsigned int   Height()      { return m_height; }
@@ -56,6 +61,7 @@ protected:
   unsigned int   m_inputBuffSize;
   struct         jpeg_decompress_struct m_cinfo;
   CStdString     m_texturePath;
+  unsigned char* m_thumbnailbuffer;
 
   unsigned int   m_width;
   unsigned int   m_height;
