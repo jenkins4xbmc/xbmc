@@ -28,8 +28,9 @@
 
 #include <jpeglib.h>
 #include "utils/StdString.h"
+#include "iimage.h"
 
-class CJpegIO
+class CJpegIO : public IImage
 {
 
 public:
@@ -48,10 +49,6 @@ public:
                                             unsigned char* &bufferout, unsigned int &bufferoutSize);
   virtual void   ReleaseThumbnailBuffer();
 
-  unsigned int   Width()       { return m_width; }
-  unsigned int   Height()      { return m_height; }
-  unsigned int   Orientation() { return m_orientation; }
-
 protected:
   static  void   jpeg_error_exit(j_common_ptr cinfo);
 
@@ -62,10 +59,6 @@ protected:
   struct         jpeg_decompress_struct m_cinfo;
   CStdString     m_texturePath;
   unsigned char* m_thumbnailbuffer;
-
-  unsigned int   m_width;
-  unsigned int   m_height;
-  unsigned int   m_orientation;
 };
 
 #endif
