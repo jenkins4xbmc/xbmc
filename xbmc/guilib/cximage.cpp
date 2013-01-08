@@ -24,15 +24,19 @@
 CXImage::CXImage(const std::string& strMimeType): m_strMimeType(strMimeType), m_thumbnailbuffer(NULL)
 {
   m_hasAlpha = false;
+  m_dll.Load();
 }
 
 CXImage::~CXImage()
 {
+  m_dll.FreeMemory(m_thumbnailbuffer);
+  m_dll.ReleaseImage(&m_image);
+  m_dll.Unload();
 }
 
 bool CXImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height)
 {
-  if (!m_dll.Load())
+  if (!m_dll.IsLoaded())
     return false;
 
   memset(&m_image, 0, sizeof(m_image));
@@ -59,6 +63,8 @@ bool CXImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, u
 
 bool CXImage::Decode(const unsigned char *pixels, unsigned int pitch, unsigned int format)
 {
+  if (m_image.width == 0 || m_image.width == 0 || !m_dll.IsLoaded())
+    return false;
 
   unsigned int dstPitch = pitch;
   unsigned int srcPitch = ((m_image.width + 1)* 3 / 4) * 4; // bitmap row length is aligned to 4 bytes
@@ -99,13 +105,14 @@ bool CXImage::Decode(const unsigned char *pixels, unsigned int pitch, unsigned i
   }
 
   m_dll.ReleaseImage(&m_image);
+  memset(&m_image, 0, sizeof(m_image));
   return true;
 }
 
 bool CXImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile, 
                                          unsigned char* &bufferout, unsigned int &bufferoutSize)
 {
-  if (!bufferin || !m_dll.Load()) 
+  if (!bufferin || !m_dll.IsLoaded()) 
     return false;
 
   bool ret = m_dll.CreateThumbnailFromSurface2((BYTE *)bufferin, width, height, pitch, destFile.c_str(), (BYTE *)m_thumbnailbuffer, bufferoutSize);
@@ -115,7 +122,7 @@ bool CXImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int w
 
 void CXImage::ReleaseThumbnailBuffer()
 {
-  if (!m_dll.Load())
+  if (!m_dll.IsLoaded())
     return;
 
   m_dll.FreeMemory(m_thumbnailbuffer);
