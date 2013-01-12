@@ -27,10 +27,41 @@ public:
   IImage():m_width(0), m_height(0), m_originalWidth(0), m_originalHeight(0), m_orientation(0), m_hasAlpha(false) {};
   virtual ~IImage() {};
 
+  /*!
+   \brief Load an image from memory to determine it's size and orientation
+   \param buffer The memory location where the image data can be found
+   \param bufSize The size of the buffer
+   \param width The ideal width of the texture
+   \param height The ideal height of the texture
+   \return true if the image could be loaded
+   */
   virtual bool LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height)=0;
+  /*!
+   \brief Decodes to the output buffer of the given format
+   \param pixels The output buffer
+   \param pitch The pitch for the output texture
+   \param format The format of the output buffer
+   \return true if the image data could be decoded to the output buffer
+   */
   virtual bool Decode(const unsigned char *pixels, unsigned int pitch, unsigned int format)=0;
+  /*!
+   \brief Encodes an thumbnail from a given memory location
+   \remarks Caller need to call ReleaseThumbnailBuffer() afterwards to free the output buffer
+   \param bufferin The memory location where the image data can be found
+   \param width The width of the thumbnail
+   \param height The height of the thumbnail
+   \param format The format of the input buffer
+   \param pitch The pitch of the input texture
+   \param destFile The destination path of the thumbnail to determine the image format from the extension
+   \param bufferout The output buffer (will be allocated inside the method)
+   \param bufferoutSize The output buffer size
+   \return true if the thumbnail was successfully created
+   */
   virtual bool CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile, 
                                           unsigned char* &bufferout, unsigned int &bufferoutSize)=0;
+  /*!
+   \brief Frees the output buffer allocated by CreateThumbnailFromSurface
+   */
   virtual void ReleaseThumbnailBuffer() {return;}
 
   unsigned int Width()              { return m_width; }
