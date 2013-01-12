@@ -25,7 +25,6 @@
 #include "DDSImage.h"
 #include "filesystem/SpecialProtocol.h"
 #include "filesystem/File.h"
-#include "guilib/imagefactory.h"
 #if defined(TARGET_DARWIN_IOS)
 #include <ImageIO/ImageIO.h>
 #include "filesystem/File.h"
@@ -326,7 +325,52 @@ bool CBaseTexture::LoadFromFileInternal(const CStdString& texturePath, unsigned 
 
   CURL url(texturePath);
   IImage* pImage = ImageFactory::CreateLoader(url);
-  if(pImage != NULL && pImage->LoadImageFromMemory(inputBuff, inputBuffSize, width, height))
+  if(!LoadIImage(pImage, inputBuff, inputBuffSize, width, height, autoRotate))
+  {
+    delete pImage;
+    pImage = NULL;
+    pImage = ImageFactory::CreateFallbackLoader(texturePath);
+    if(!LoadIImage(pImage, inputBuff, inputBuffSize, width, height))
+    {
+      CLog::Log(LOGDEBUG, "%s - Load of %s failed.", __FUNCTION__, texturePath.c_str());
+      delete pImage;
+      delete [] inputBuff;
+      return false;
+    }
+  }
+  delete pImage;
+  delete [] inputBuff;
+
+  return true;
+}
+
+bool CBaseTexture::LoadFromFileInMem(unsigned char* buffer, size_t size, const std::string& mimeType, unsigned int maxWidth, unsigned int maxHeight)
+{
+  if (!buffer || !size)
+    return false;
+
+  unsigned int width = maxWidth ? std::min(maxWidth, g_Windowing.GetMaxTextureSize()) : g_Windowing.GetMaxTextureSize();
+  unsigned int height = maxHeight ? std::min(maxHeight, g_Windowing.GetMaxTextureSize()) : g_Windowing.GetMaxTextureSize();
+
+  IImage* pImage = ImageFactory::CreateLoaderFromMimeType(mimeType);
+  if(!LoadIImage(pImage, buffer, size, width, height))
+  {
+    delete pImage;
+    pImage = NULL;
+    pImage = ImageFactory::CreateFallbackLoader(mimeType);
+    if(!LoadIImage(pImage, buffer, size, width, height))
+    {
+      delete pImage;
+      return false;
+    }
+  }
+  delete pImage;
+  return true;
+}
+
+bool CBaseTexture::LoadIImage(IImage *pImage, unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height, bool autoRotate)
+{
+  if(pImage != NULL && pImage->LoadImageFromMemory(buffer, bufSize, width, height))
   {
     if (pImage->Width() > 0 && pImage->Height() > 0)
     {
@@ -339,48 +383,10 @@ bool CBaseTexture::LoadFromFileInternal(const CStdString& texturePath, unsigned 
         m_originalWidth = pImage->originalWidth();
         m_originalHeight = pImage->originalHeight();
         ClampToEdge();
-        delete pImage;
-        delete [] inputBuff;
-        return true;
-      }
-    }
-      
-  }
-  delete pImage;
-  CLog::Log(LOGDEBUG, "%s - Load of %s failed.", __FUNCTION__, texturePath.c_str());
-
-  delete [] inputBuff;
-
-  return false;
-}
-
-bool CBaseTexture::LoadFromFileInMem(unsigned char* buffer, size_t size, const std::string& mimeType, unsigned int maxWidth, unsigned int maxHeight)
-{
-  if (!buffer || !size)
-    return false;
-
-  unsigned int width = maxWidth ? std::min(maxWidth, g_Windowing.GetMaxTextureSize()) : g_Windowing.GetMaxTextureSize();
-  unsigned int height = maxHeight ? std::min(maxHeight, g_Windowing.GetMaxTextureSize()) : g_Windowing.GetMaxTextureSize();
-
-  IImage* pImage = ImageFactory::CreateLoaderFromMimeType(mimeType);
-  if(pImage != NULL && pImage->LoadImageFromMemory(buffer, size, width, height))
-  {
-    if (pImage->Width() > 0 && pImage->Height() > 0)
-    {
-      Allocate(pImage->Width(), pImage->Height(), XB_FMT_A8R8G8B8);
-      if (pImage->Decode(m_pixels, GetPitch(), XB_FMT_A8R8G8B8))
-      {
-        m_hasAlpha = pImage->hasAlpha();
-        m_originalWidth = pImage->originalWidth();
-        m_originalHeight = pImage->originalHeight();
-        ClampToEdge();
-        delete pImage;
         return true;
       }
     }
   }
-  delete pImage;
-
   return false;
 }
 

@@ -40,3 +40,13 @@ IImage* ImageFactory::CreateLoaderFromMimeType(const std::string& strMimeType)
     return new CJpegIO();
   return new CXImage(strMimeType);
 }
+
+IImage* ImageFactory::CreateFallbackLoader(const std::string& strMimeType)
+{
+  return new CXImage(strMimeType);
+}
+
+IImage* ImageFactory::CreateFallbackLoader(const CURL& url)
+{
+  return new CXImage("image/"+url.GetFileType());
+}
