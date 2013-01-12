@@ -296,29 +296,62 @@ bool CBaseTexture::LoadFromFileInternal(const CStdString& texturePath, unsigned 
   unsigned int height = maxHeight ? std::min(maxHeight, g_Windowing.GetMaxTextureSize()) : g_Windowing.GetMaxTextureSize();
 
   // Read image into memory to use our vfs
-  unsigned int imgsize = 0;
   unsigned char *inputBuff = NULL;
   unsigned int inputBuffSize = 0;
 
   XFILE::CFile file;
-  if (file.Open(texturePath.c_str(), 0))
+  if (file.Open(texturePath.c_str(), READ_TRUNCATED))
   {
-    imgsize = (unsigned int)file.GetLength();
-    inputBuff = new unsigned char[imgsize];
-    if(!inputBuff)
+    /*
+     GetLength() will typically return values that fall into three cases:
+       1. The real filesize. This is the typical case.
+       2. Zero. This is the case for some http:// streams for example.
+       3. Some value smaller than the real filesize. This is the case for an expanding file.
+
+     In order to handle all three cases, we read the file in chunks, relying on Read()
+     returning 0 at EOF.  To minimize (re)allocation of the buffer, the chunksize in
+     cases 1 and 3 is set to one byte larger** than the value returned by GetLength().
+     The chunksize in case 2 is set to the larger of 64k and GetChunkSize().
+
+     We fill the buffer entirely before reallocation.  Thus, reallocation never occurs in case 1
+     as the buffer is larger than the file, so we hit EOF before we hit the end of buffer.
+
+     To minimize reallocation, we double the chunksize each time up to a maxchunksize of 2MB.
+     */
+    unsigned int filesize = (unsigned int)file.GetLength();
+    unsigned int chunksize = filesize ? (filesize + 1) : std::max(65536U, (unsigned int)file.GetChunkSize());
+    unsigned int maxchunksize = 2048*1024U; /* max 2MB chunksize */
+    unsigned char *tempinputBuff = NULL;
+
+    unsigned int total_read = 0, free_space = 0;
+    while (true)
     {
-      CLog::Log(LOGERROR, "%s - Can't allocate %i of bytes. Load of %s failed.", __FUNCTION__, imgsize, texturePath.c_str());
-      file.Close();
-      return false;
+      if (!free_space)
+      { // (re)alloc
+        inputBuffSize += chunksize;
+        tempinputBuff = (unsigned char *)realloc(inputBuff, inputBuffSize);
+        if (!tempinputBuff)
+        {
+          CLog::Log(LOGERROR, "%s unable to allocate buffer of size %u", __FUNCTION__, inputBuffSize);
+          free(inputBuff);
+          file.Close();
+          return false;
+        }
+        inputBuff = tempinputBuff;
+        free_space = chunksize;
+        chunksize = std::min(chunksize*2, maxchunksize);
+      }
+      unsigned int read = file.Read(inputBuff + total_read, free_space);
+      free_space -= read;
+      total_read += read;
+      if (!read)
+        break;
     }
-    inputBuffSize = file.Read(inputBuff, imgsize);
+    inputBuffSize = total_read;
     file.Close();
 
-    if ((imgsize != inputBuffSize) || (inputBuffSize == 0))
-    {
-      delete [] inputBuff;
+    if (inputBuffSize == 0)
       return false;
-    }
   }
   else
     return false;
@@ -334,12 +367,12 @@ bool CBaseTexture::LoadFromFileInternal(const CStdString& texturePath, unsigned 
     {
       CLog::Log(LOGDEBUG, "%s - Load of %s failed.", __FUNCTION__, texturePath.c_str());
       delete pImage;
-      delete [] inputBuff;
+      free(inputBuff);
       return false;
     }
   }
   delete pImage;
-  delete [] inputBuff;
+  free(inputBuff);
 
   return true;
 }
