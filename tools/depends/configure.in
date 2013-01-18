@@ -4,12 +4,6 @@ AC_INIT([android-depends], [2.00], [http://trac.xbmc.org])
 AC_CONFIG_AUX_DIR([aux])
 AC_CONFIG_FILES([config.site config.site.native Makefile Makefile.include Toolchain.cmake])
 AC_CANONICAL_HOST
-AC_ARG_VAR(XBMC_ANDROID_NDK, path to android ndk)
-AC_ARG_VAR(XBMC_ANDROID_SDK, path to android sdk)
-AC_ARG_VAR(XBMC_ANDROID_TARBALLS, path where tarballs will be saved)
-use_ndk=$XBMC_ANDROID_NDK
-use_sdk_path=$XBMC_ANDROID_SDK
-use_tarballs=$XBMC_ANDROID_TARBALLS
 
 AC_ARG_WITH([toolchain],
   [AS_HELP_STRING([--with-toolchain],
