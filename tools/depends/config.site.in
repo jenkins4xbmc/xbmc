@@ -18,23 +18,23 @@ if test "@platform_os@" = "ios" ; then
   export CCAS="--tag CC @prefix@/@build_cpu@-@build_os@-native/bin/gas-preprocessor.pl @CC@"
 fi
 
-CFLAGS="@platform_cflags@ @platform_includes@ -I@prefix@/@use_host@/include $CFLAGS"
-LDFLAGS="@platform_ldflags@ -L@prefix@/@use_host@/lib $LDFLAGS"
-CXXFLAGS="@platform_cxxflags@ @platform_includes@ -I@prefix@/@use_host@/include $CXXFLAGS"
-CPPFLAGS="@platform_cflags@ @platform_includes@ -I@prefix@/@use_host@/include $CPPFLAGS"
+CFLAGS="@platform_cflags@ @platform_includes@ -I@prefix@/@deps_dir@/include $CFLAGS"
+LDFLAGS="@platform_ldflags@ -L@prefix@/@deps_dir@/lib $LDFLAGS"
+CXXFLAGS="@platform_cxxflags@ @platform_includes@ -I@prefix@/@deps_dir@/include $CXXFLAGS"
+CPPFLAGS="@platform_cflags@ @platform_includes@ -I@prefix@/@deps_dir@/include $CPPFLAGS"
 
 export PKG_CONFIG=@prefix@/@build_cpu@-@build_os@-native/bin/pkg-config
-export PKG_CONFIG_PATH=@prefix@/@use_host@/lib/pkgconfig
+export PKG_CONFIG_PATH=@prefix@/@deps_dir@/lib/pkgconfig
 export NASM=@prefix@/@build_cpu@-@build_os@-native/bin/yasm
-export MYSQL_CONFIG=@prefix@/@use_host@/bin/mysql_config
+export MYSQL_CONFIG=@prefix@/@deps_dir@/bin/mysql_config
 
 PATH=@prefix@/@build_cpu@-@build_os@-native/bin:@use_toolchain@/bin:$PATH
 LD_LIBRARY_PATH=@prefix@/@build_cpu@-@build_os@-native/lib:$LD_LIBRARY_PATH
 
 PYTHON_VERSION=2.6
-PYTHON_LDFLAGS="-L@prefix@/@use_host@/lib -lpython${PYTHON_VERSION} -lc -ldl -lm -lexpat -lffi -lintl -lutil"
-PYTHON_CPPFLAGS=-I@prefix@/@use_host@/include/python${PYTHON_VERSION}
-PYTHON_SITE_PKG=@prefix@/@use_host@/lib/python${PYTHON_VERSION}/site-packages
+PYTHON_LDFLAGS="-L@prefix@/@deps_dir@/lib -lpython${PYTHON_VERSION} -lc -ldl -lm -lexpat -lffi -lintl -lutil"
+PYTHON_CPPFLAGS=-I@prefix@/@deps_dir@/include/python${PYTHON_VERSION}
+PYTHON_SITE_PKG=@prefix@/@deps_dir@/lib/python${PYTHON_VERSION}/site-packages
 PYTHON_NOVERSIONCHECK=no-check
 USE_TEXTUREPACKER_NATIVE_ROOT=@prefix@/@build_cpu@-@build_os@-native
 
@@ -52,7 +52,7 @@ gl_cv_header_working_stdint_h=yes
 ac_cv_search_dlopen=-ldl
 
 #libgcrypt
-ac_cv_path_GPG_ERROR_CONFIG=@prefix@/@use_host@/bin/gpg-error-config
+ac_cv_path_GPG_ERROR_CONFIG=@prefix@/@deps_dir@/bin/gpg-error-config
 ac_cv_sys_symbol_underscore=no
 
 #python
