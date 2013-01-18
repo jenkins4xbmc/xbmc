@@ -10,40 +10,43 @@ SOURCE=$(LIBNAME)-$(VERSION)
 ARCHIVE=$(SOURCE).tar.bz2
 
 # configuration settings
-CONFIGURE=OPT=-Os \
+CONFIGURE=OPT="$(CFLAGS)" \
   LIBS=-lm \
-  ./configure --prefix=$(PREFIX) --host=$(HOST) \
+  ./configure --prefix=$(PREFIX) \
   --disable-toolbox-glue --disable-framework --with-system-ffi \
-  ac_cv_func_gethostbyname_r=no ac_cv_header_sys_un_h=yes
 
 LIBDYLIB=$(PLATFORM)/libpython2.6.a
 
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	echo $(NATIVEPREFIX)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -Np1 -i ../Python-2.6.5-xcompile.patch
 	cd $(PLATFORM); patch -Np1 -i ../Python-2.6.2-android.patch
 	cd $(PLATFORM); patch -p0 < ../Python-no-modules.patch
 	cd $(PLATFORM); patch -p0 < ../Python-no-export-path.patch
+	cd $(PLATFORM); patch -p1 < ../python-osx-environ-fix.patch
 	cp modules.setup $(PLATFORM)/Modules/Setup.dist
-	cd $(PLATFORM); sed -ie 's|-framework CoreFoundation||' configure.in
+	cd $(PLATFORM); sed -ie 's|_locale _localemodule.c   -lintl|_locale _localemodule.c   -lintl $(LINK_ICONV) |' Modules/Setup.dist
+	#cd $(PLATFORM); sed -ie 's|-framework CoreFoundation||' configure.in
 	cd $(PLATFORM); $(AUTORECONF)
 	cd $(PLATFORM); $(CONFIGURE)
 
 $(LIBDYLIB): $(PLATFORM)
 	$(MAKE) -C $(PLATFORM) HOSTPYTHON=$(NATIVEPREFIX)/bin/python HOSTPGEN=$(NATIVEPREFIX)/bin/pgen CROSS_COMPILE_TARGET=yes libpython2.6.a
+	touch $@
 
 .installed-$(PLATFORM): $(LIBDYLIB)
 	make -C $(PLATFORM) HOSTPYTHON=$(NATIVEPREFIX)/bin/python HOSTPGEN=$(NATIVEPREFIX)/bin/pgen CROSS_COMPILE_TARGET=yes install
 	find $(PREFIX)/lib/python2.6 -type f -name "*.py" -delete
 	find $(PREFIX)/lib/python2.6 -type f -name "*.pyc" -delete
 	#
+	touch $(LIBDYLIB)
 	touch $@
 
 clean:

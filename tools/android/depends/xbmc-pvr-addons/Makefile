@@ -1,5 +1,5 @@
 include ../Makefile.include
-DEPS= ../Makefile.include Makefile
+#DEPS= ../Makefile.include Makefile
 
 LIBNAME=xbmc-pvr-addons
 VERSION=a9780e023c8b7728017851bfd12d4df9e5c26993
@@ -14,7 +14,7 @@ export GIT_WORK_TREE=$(PLATFORM)
 export MYSQL_CONFIG=$(PREFIX)/bin/mysql_config
 
 # configuration settings
-CONFIGURE=./configure --prefix=$(PREFIX) --host=$(HOST) --enable-addons-with-dependencies
+CONFIGURE=./configure --prefix=$(PREFIX) --enable-addons-with-dependencies
 
 all: .installed-$(PLATFORM)
 
@@ -39,6 +39,7 @@ $(PLATFORM)/Makefile: $(PLATFORM)/configure
 
 $(DYLIB): $(PLATFORM)/Makefile
 	make -C $(PLATFORM)
+	touch $@
 
 .installed-$(PLATFORM): $(DYLIB)
 	$(MAKE) -C $(PLATFORM) install

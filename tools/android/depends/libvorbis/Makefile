@@ -10,7 +10,7 @@ ARCHIVE=$(SOURCE).tar.gz
 export LIBS=-lm
 # configuration settings
 CONFIGURE=cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
-          ./configure --prefix=$(PREFIX) --host=$(HOST) --disable-oggtest --disable-docs --disable-examples
+          ./configure --prefix=$(PREFIX) --disable-oggtest --disable-docs --disable-examples
 
 LIBDYLIB=$(PLATFORM)/lib/.libs/$(LIBNAME).a
 
@@ -19,11 +19,11 @@ CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	sed -ie "s|SUBDIRS = m4 include vq lib examples test doc|SUBDIRS = m4 include lib|" "$(PLATFORM)/Makefile.in"
 	cd $(PLATFORM); $(CONFIGURE)
 
@@ -32,6 +32,7 @@ $(LIBDYLIB): $(PLATFORM)
 
 .installed-$(PLATFORM): $(LIBDYLIB)
 	$(MAKE) -C $(PLATFORM) install
+ifeq ($(OS),android)
 	rm -f $(PREFIX)/lib/libvorbis.la $(PREFIX)/lib/libvorbis.so $(PREFIX)/lib/libvorbis.so.0
 	mv -f $(PREFIX)/lib/libvorbis.so.0.4.3 $(PREFIX)/lib/libxbvorbis.so
 	ln -sf $(PREFIX)/lib/libxbvorbis.so $(PREFIX)/lib/libvorbis.so
@@ -52,6 +53,7 @@ $(LIBDYLIB): $(PLATFORM)
 	$(RPL) -e "libvorbis.so.0" "libxbvorbis.so" $(PREFIX)/lib/libxbvorbisenc.so
 	-$(READELF) --dynamic $(PREFIX)/lib/libxbvorbisenc.so | grep ibrary
 	#
+endif
 	touch $@
 
 clean:

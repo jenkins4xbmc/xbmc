@@ -25,7 +25,7 @@ diff --ignore-file-name-case -wuprN Python-2.6.2/Modules/termios.c python-src//M
  	return Py_None;
  }
  
-+#if 0  // No tcdrain defined for Android.
++#if !defined(ANDROID)  // No tcdrain defined for Android.
  PyDoc_STRVAR(termios_tcdrain__doc__,
  "tcdrain(fd) -> None\n\
  \n\
@@ -37,14 +37,14 @@ diff --ignore-file-name-case -wuprN Python-2.6.2/Modules/termios.c python-src//M
  
  PyDoc_STRVAR(termios_tcflush__doc__,
  "tcflush(fd, queue) -> None\n\
-@@ -301,8 +303,8 @@ static PyMethodDef termios_methods[] =
+@@ -301,8 +303,10 @@ static PyMethodDef termios_methods[] =
  	 METH_VARARGS, termios_tcsetattr__doc__},
  	{"tcsendbreak", termios_tcsendbreak, 
  	 METH_VARARGS, termios_tcsendbreak__doc__},
--	{"tcdrain", termios_tcdrain, 
--	 METH_VARARGS, termios_tcdrain__doc__},
-+	// {"tcdrain", termios_tcdrain,
-+	//  METH_VARARGS, termios_tcdrain__doc__},
++#if !defined(ANDROID)
+	{"tcdrain", termios_tcdrain, 
+	 METH_VARARGS, termios_tcdrain__doc__},
++#endif
  	{"tcflush", termios_tcflush, 
  	 METH_VARARGS, termios_tcflush__doc__},
  	{"tcflow", termios_tcflow, 

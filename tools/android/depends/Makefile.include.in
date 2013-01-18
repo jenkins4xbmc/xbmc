@@ -1,83 +1,52 @@
 TOOLCHAIN=@use_toolchain@
 NDKROOT=@use_ndk@
-SDKROOT=@use_sdk@
-XBMCPREFIX=@use_staging@
+SDKROOT=@use_sdk_path@
 TARBALLS_LOCATION=@use_tarballs@
-HOST=@use_host@
-PLATFORM=@use_cpu@
-NATIVEPLATFORM=@use_cpu@-native
-SDK_PLATFORM=@use_sdk_platform@
+PLATFORM=@use_host@
+CPU=@use_cpu@
+NATIVEPLATFORM=@build_cpu@-@build_os@-native
+SDK_PLATFORM=@use_sdk@
 RETRIEVE_TOOL=@CURL@
 ARCHIVE_TOOL=@TAR@
+PREFIX=@prefix@/@use_host@
+NATIVEPREFIX=@prefix@/@build_cpu@-@build_os@-native
+OS=@platform_os@
 
-ifneq ($(XBMC_OVERRIDE_TOOLCHAIN),)
-TOOLCHAIN=$(XBMC_OVERRIDE_TOOLCHAIN)
-endif
-
-ifneq ($(XBMC_OVERRIDE_PLATFORM),)
-PLATFORM=$(XBMC_OVERRIDE_PLATFORM)
-NATIVEPLATFORM=$(XBMC_OVERRIDE_PLATFORM)-native
-endif
-
-ifneq ($(XBMC_OVERRIDE_HOST),)
-HOST=$(XBMC_OVERRIDE_HOST)
-endif
-
-PREFIX=$(XBMCPREFIX)/$(PLATFORM)
-NATIVEPREFIX=$(XBMCPREFIX)/$(NATIVEPLATFORM)
-
-PLATFORM_FLAGS=-DANDROID -Os
-ifeq ($(PLATFORM),armeabi-v7a)
-  PLATFORM_FLAGS+=-march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=neon -D__ARM_ARCH_7__ -D__ARM_ARCH_7A__
-endif
-
-ifeq ($(PLATFORM),x86)
-  PLATFORM_FLAGS+=-fomit-frame-pointer
-endif
+HAS_ZLIB=@has_zlib@
+LINK_ICONV=@link_iconv@
 
 BASE_URL=http://mirrors.xbmc.org/build-deps/sources
-RETRIEVE_TOOL_FLAGS=-Ls --create-dirs -f --output $(TARBALLS_LOCATION)/$(ARCHIVE)
-ARCHIVE_TOOL_FLAGS=-C $(PLATFORM) --strip-components=1 -xf
-CONFIG_SUB=$(NATIVEPREFIX)/share/automake-1.11/config.sub
-CONFIG_GUESS=$(NATIVEPREFIX)/share/automake-1.11/config.guess
-RPL=$(NATIVEPREFIX)/bin/python $(NATIVEPREFIX)/bin/rpl
-YASM=$(NATIVEPREFIX)/bin/yasm
+RETRIEVE_TOOL_FLAGS=-Ls --create-dirs -f -O
+ARCHIVE_TOOL_FLAGS=--strip-components=1 -xf
+CONFIG_SUB=@prefix@/@build_cpu@-@build_os@-native/share/automake-1.11/config.sub
+CONFIG_GUESS=@prefix@/@build_cpu@-@build_os@-native/share/automake-1.11/config.guess
 
-ifneq ($(NATIVE_BUILD),1)
-  export SYSROOT=$(TOOLCHAIN)/sysroot
-  export CROSSTOOLS=$(TOOLCHAIN)/bin/$(HOST)-
-  export LD=$(CROSSTOOLS)ld
-  export CC=$(CROSSTOOLS)gcc
-  export CXX=$(CROSSTOOLS)g++
-  export AR=$(CROSSTOOLS)ar
-  export AS=$(CROSSTOOLS)as
-  export NM=$(CROSSTOOLS)nm
-  export STRIP=$(CROSSTOOLS)strip
-  export RANLIB=$(CROSSTOOLS)ranlib
-  export OBJDUMP=$(CROSSTOOLS)objdump
-  export READELF=$(CROSSTOOLS)readelf
-  export CFLAGS=$(PLATFORM_FLAGS) -I$(PREFIX)/include -I$(PREFIX)/include/$(SDK_PLATFORM) -fexceptions
-  export LDFLAGS=$(PLATFORM_FLAGS) -L$(PREFIX)/lib -L$(PREFIX)/lib/$(SDK_PLATFORM)
-  export CPPFLAGS=$(PLATFORM_FLAGS) -I$(PREFIX)/include -I$(PREFIX)/include/$(SDK_PLATFORM) -fexceptions
-  export CXXFLAGS=$(PLATFORM_FLAGS) -I$(PREFIX)/include -I$(PREFIX)/include/$(SDK_PLATFORM) -fexceptions -frtti
+RPL=@prefix@/@build_cpu@-@build_os@-native/bin/python @prefix@/@build_cpu@-@build_os@-native/bin/rpl
 
-  export PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig
-  export PKG_CONFIG=$(NATIVEPREFIX)/bin/pkg-config
+LD=@LD@
+CC=@CC@
+CXX=@CXX@
+CPP=@CPP@
+AR=@AR@
+RANLIB=@RANLIB@
+AS=@AS@
+NM=@NM@
+STRIP=@STRIP@
+READELF=@READELF@
+OBJDUMP=@OBJDUMP@
 
-  export AUTOMAKE=$(NATIVEPREFIX)/bin/automake
-  export AUTOCONF=$(NATIVEPREFIX)/bin/autoconf
-  export ACLOCAL=$(NATIVEPREFIX)/bin/aclocal
-  export ACLOCAL_PATH=$(PREFIX)/share/aclocal:$(NATIVEPREFIX)/share/aclocal
-  export LIBTOOLIZE=$(NATIVEPREFIX)/bin/libtoolize
-  export AUTORECONF=$(NATIVEPREFIX)/bin/autoreconf
-else
-  PLATFORM=$(NATIVEPLATFORM)
-  PREFIX=$(NATIVEPREFIX)
+CMAKE=@prefix@/@build_cpu@-@build_os@-native/bin/cmake -DCMAKE_TOOLCHAIN_FILE=$(PREFIX)/share/Toolchain.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX)
+CFLAGS=@platform_cflags@ @platform_includes@ -I@prefix@/@use_host@/include
+LDFLAGS=@platform_ldflags@ -L@prefix@/@use_host@/lib
+CXXFLAGS=@platform_cxxflags@ @platform_includes@ -I@prefix@/@use_host@/include
+CPPFLAGS=@platform_cflags@ @platform_includes@ -I@prefix@/@use_host@/include
 
-  export CFLAGS=-I$(PREFIX)/include
-  export LDFLAGS=-L$(PREFIX)/lib
-  export CPPFLAGS=-I$(PREFIX)/include
-  export CXXFLAGS=-I$(PREFIX)/include
-endif
-  export PATH:=$(NATIVEPREFIX)/bin:$(PATH)
-  export LD_LIBRARY_PATH:=$(NATIVEPREFIX)/lib:$(LD_LIBRARY_PATH)
+export AUTOM4TE=@prefix@/@build_cpu@-@build_os@-native/bin/autom4te
+export AUTOMAKE=@prefix@/@build_cpu@-@build_os@-native/bin/automake
+export AUTOCONF=@prefix@/@build_cpu@-@build_os@-native/bin/autoconf
+export ACLOCAL=@prefix@/@build_cpu@-@build_os@-native/bin/aclocal
+export ACLOCAL_PATH=@prefix@/@use_host@/share/aclocal:@prefix@/@build_cpu@-@build_os@-native/share/aclocal
+export LIBTOOL=@prefix@/@build_cpu@-@build_os@-native/bin/libtool
+export LIBTOOLIZE=@prefix@/@build_cpu@-@build_os@-native/bin/libtoolize
+
+export AUTORECONF=@prefix@/@build_cpu@-@build_os@-native/bin/autoreconf

@@ -42,23 +42,29 @@
  #else
 --- lib/dsi.c	2012-06-03 23:24:15.454347269 -0400
 +++ lib/dsi.c	2012-06-03 23:25:01.634347240 -0400
-@@ -610,7 +610,7 @@
+@@ -610,7 +610,11 @@
  		afp_getsrvrmsg(server,AFPMESG_SERVER,
  			((server->using_version->av_number>=30)?1:0),
  			DSI_DEFAULT_TIMEOUT,mesg); 
--		if(bcmp(mesg,"The server is going down for maintenance.",41)==0)
++#if defined(ANDROID)
 +		if(memcmp(mesg,"The server is going down for maintenance.",41)==0)
++#else
+ 		if(bcmp(mesg,"The server is going down for maintenance.",41)==0)
++#endif
  			shutdown=1;
  	}
  
 --- lib/afp.c	2012-06-03 23:24:15.474347269 -0400
 +++ lib/afp.c	2012-06-03 23:25:12.464347233 -0400
-@@ -205,7 +205,7 @@
+@@ -205,7 +205,11 @@
  {
          struct afp_server *s;
  	for (s=server_base;s;s=s->next) {
--                if (bcmp(&s->address,address,sizeof(struct sockaddr_in))==0)
++#if defined(ANDROID)
 +                if (memcmp(&s->address,address,sizeof(struct sockaddr_in))==0)
++#else
+                 if (bcmp(&s->address,address,sizeof(struct sockaddr_in))==0)
++#endif
                          return s;
  	}
          return NULL;

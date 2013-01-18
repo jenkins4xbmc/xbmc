@@ -1,21 +1,23 @@
 diff -ruN src/daemon/daemon.c src/daemon/daemon.c
 --- src/daemon/daemon.c	2012-05-07 17:21:43.695832026 -0400
 +++ src/daemon/daemon.c	2012-05-07 17:20:20.365832079 -0400
-@@ -244,7 +244,7 @@
+@@ -244,7 +244,9 @@
    MHD_ip_count_lock (daemon);
  
    /* Search for the IP address */
--  node = (void*)TSEARCH (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
-+//  node = (void*)TSEARCH (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
++#if !defined(ANDROID)
+   node = (void*)TSEARCH (key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
++#endif
    if (!node)
      {
  #if HAVE_MESSAGES
-@@ -296,7 +296,7 @@
+@@ -296,7 +298,9 @@
    MHD_ip_count_lock (daemon);
  
    /* Search for the IP address */
--  node = (void*)TFIND (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
-+//  node = (void*)TFIND (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
++#if !defined(ANDROID)
+   node = (void*)TFIND (&search_key, &daemon->per_ip_connection_count, MHD_ip_addr_compare);
++#endif
  
    /* Something's wrong if we couldn't find an IP address
     * that was previously added */

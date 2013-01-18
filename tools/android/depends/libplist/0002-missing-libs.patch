@@ -6,7 +6,7 @@ diff -ruN armeabi-v7a/src/CMakeLists.txt armeabi-v7a.good//src/CMakeLists.txt
  
  ADD_LIBRARY( plist SHARED ${libplist_SRC} ${libcnary_object_files} )
 -TARGET_LINK_LIBRARIES( plist ${LIBXML2_LIBRARIES} )
-+TARGET_LINK_LIBRARIES( plist m z iconv ${LIBXML2_LIBRARIES} )
++TARGET_LINK_LIBRARIES( plist m z ${LIBXML2_LIBRARIES} )
  SET_TARGET_PROPERTIES( plist PROPERTIES VERSION ${LIBPLIST_LIBVERSION} )
  SET_TARGET_PROPERTIES( plist PROPERTIES SOVERSION ${LIBPLIST_SOVERSION} )
  if(APPLE)

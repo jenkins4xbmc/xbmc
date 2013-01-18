@@ -9,8 +9,8 @@ ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz
 # configuration settings
 CFLAGS+=-I$(CURDIR)/oscl
 CONFIGURE=cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
-          ./configure --prefix=$(PREFIX) --host=$(HOST) --disable-shared \
-           --enable-android ac_cv_func_malloc_0_nonnull=yes
+          ./configure --prefix=$(PREFIX) --disable-shared \
+           --enable-android
 
 LIBDYLIB=$(PLATFORM)/src/.libs/$(LIBNAME).a
 
@@ -19,11 +19,11 @@ CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) "$(BASE_URL)/$(ARCHIVE)"
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) "$(BASE_URL)/$(ARCHIVE)"
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p1 < ../android-fix-build.patch
 	cd $(PLATFORM); autoreconf -vif
 	cd $(PLATFORM); $(CONFIGURE)

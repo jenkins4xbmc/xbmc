@@ -2,25 +2,17 @@
 
 SOURCE=../../../../
 
-export PYTHON_VERSION=2.6
-export PYTHON_LDFLAGS=-L$(PREFIX)/lib -lpython$(PYTHON_VERSION) -lc -ldl -lm -lexpat -lffi -lintl
-export PYTHON_CPPFLAGS=-I$(PREFIX)/include/python$(PYTHON_VERSION)
-export PYTHON_SITE_PKG=$(PREFIX)/lib/python$(PYTHON_VERSION)/site-packages
-export PYTHON_NOVERSIONCHECK=no-check
-export USE_TEXTUREPACKER_NATIVE_ROOT=$(NATIVEPREFIX)
-export MYSQL_CONFIG=$(PREFIX)/bin/mysql_config
-export LIBS+=-lcrystax
-
 export CXXFLAGS+=-O3
 export CFLAGS+=-O3
 
 # configuration settings
 CONFIGURE=cp -f $(CONFIG_SUB) $(CONFIG_GUESS) build-aux/ ;\
-  ./configure --prefix=$(PREFIX) --host=$(HOST) \
-  --enable-neon --enable-gles --enable-debug \
+  ./configure --prefix=$(PREFIX) \
+   --enable-gles --enable-debug \
   --disable-sdl --disable-x11 --disable-xrandr \
-  --disable-optical-drive --disable-joystick \
-  --enable-shared-lib --disable-alsa
+  --disable-optical-drive --disable-joystick --disable-vdpau \
+  --enable-codec=amcodec --enable-player=amlplayer --enable-neon \
+  --enable-shared-lib --disable-alsa \
 
 
 all: $(SOURCE)/libxbmc.so

@@ -8,3 +8,14 @@
 /*/x86-native/*
 /*/armeabi-v7a/*
 /*/armeabi-v7a-native/*
+/*/arm-linux-gnueabihf/*
+/*/x86_64-linux-gnu-native/*
+/*/arm-linux-androideabi/*
+/*/x86_64-linux-gnu/*
+/*/arm-linux-gnueabi/*
+/*/x86_64-darwin10.8.0-native/*
+/*/arm-apple-darwin/*
+/*/x86_64-apple-darwin/*
+Toolchain.cmake
+config.site
+config.site.native

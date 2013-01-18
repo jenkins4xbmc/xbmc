@@ -11,7 +11,7 @@ SOURCE=$(LIBNAME)-$(VERSION)
 ARCHIVE=$(SOURCE).tar.gz
 
 # configuration settings
-CONFIGURE=./configure --prefix=$(PREFIX) --host=$(HOST)
+CONFIGURE=./configure --prefix=$(PREFIX)
 
 
 LIBDYLIB=$(PLATFORM)/src/.libs/libshairport.so.0.0.0
@@ -19,11 +19,11 @@ LIBDYLIB=$(PLATFORM)/src/.libs/libshairport.so.0.0.0
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p0 < ../001_add_ao.patch
 	cd $(PLATFORM); patch -p0 < ../002_fix_install_header.patch
 	cd $(PLATFORM); patch -p0 < ../003_fix_deadlock.patch
@@ -44,10 +44,12 @@ $(LIBDYLIB): $(PLATFORM)
 
 .installed-$(PLATFORM): $(LIBDYLIB)
 	$(MAKE) -C $(PLATFORM) install
+ifeq ($(OS),android)
 	rm -f $(PREFIX)/lib/libshairport.la $(PREFIX)/lib/libshairport.so $(PREFIX)/lib/libshairport.so.0
 	mv -f $(PREFIX)/lib/libshairport.so.0.0.0 $(PREFIX)/lib/libshairport.so
 	$(RPL) -e "libshairport.so.0" "libshairport.so\x00\x00" $(PREFIX)/lib/libshairport.so
 	-$(READELF) --dynamic $(PREFIX)/lib/libshairport.so | grep ibrary
+endif
 	touch $@
 
 clean:

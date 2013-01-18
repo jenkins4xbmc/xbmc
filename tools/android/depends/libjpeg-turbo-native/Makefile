@@ -1,6 +1,7 @@
-NATIVE_BUILD=1
 include ../Makefile.include
-DEPS= ../Makefile.include Makefile
+PREFIX=$(NATIVEPREFIX)
+PLATFORM=$(NATIVEPLATFORM)
+DEPS= ../Makefile.include.in Makefile
 
 # lib name, version
 LIBNAME=libjpeg-turbo
@@ -8,6 +9,7 @@ VERSION=1.2.0
 SOURCE=$(LIBNAME)-$(VERSION)
 ARCHIVE=$(LIBNAME)-$(VERSION).tar.gz
 # configuration settings
+export NASM=$(YASM)
 CONFIGURE=cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
           NASM=$(YASM) ./configure --prefix=$(PREFIX) --with-jpeg8
 
@@ -20,11 +22,11 @@ CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
 jpegtest: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); $(CONFIGURE)
 
 $(LIBDYLIB): $(PLATFORM)

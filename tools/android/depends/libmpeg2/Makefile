@@ -9,7 +9,7 @@ ARCHIVE=$(SOURCE).tar.gz
 
 # configuration settings
 CONFIGURE=cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .auto/ ; \
-          ./configure --prefix=$(PREFIX) --host=$(HOST) --disable-sdl
+          ./configure --prefix=$(PREFIX) --disable-sdl
 
 LIBDYLIB=$(PLATFORM)/$(LIBNAME)/.libs/$(LIBNAME).a
 
@@ -18,11 +18,16 @@ CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM)/*; mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+ifeq ($(OS),ios)
+	cd $(PLATFORM); patch -p1 < ../01-libmpeg2-add-asm-leading-underscores.patch
+	cd $(PLATFORM); patch -p0 < ../02-neon.patch
+	cd $(PLATFORM); patch -p1 < ../03-config-fix.patch
+endif
 	cd $(PLATFORM); $(CONFIGURE)
 
 $(LIBDYLIB): $(PLATFORM)
@@ -30,6 +35,7 @@ $(LIBDYLIB): $(PLATFORM)
 
 .installed-$(PLATFORM): $(LIBDYLIB)
 	$(MAKE) -C $(PLATFORM) install
+ifeq ($(OS),android)
 	rm -f $(PREFIX)/lib/libmpeg2.la $(PREFIX)/lib/libmpeg2.so $(PREFIX)/lib/libmpeg2.so.0
 	mv -f $(PREFIX)/lib/libmpeg2.so.0.1.0 $(PREFIX)/lib/libxbmpeg2.so
 	ln -sf $(PREFIX)/lib/libxbmpeg2.so $(PREFIX)/lib/libmpeg2.so
@@ -42,6 +48,7 @@ $(LIBDYLIB): $(PLATFORM)
 	$(RPL) -e "libmpeg2convert.so.0" "libxbmpeg2convert.so" $(PREFIX)/lib/libxbmpeg2convert.so
 	-$(READELF) --dynamic $(PREFIX)/lib/libxbmpeg2convert.so | grep ibrary
 	#
+endif
 	touch $@
 
 clean:

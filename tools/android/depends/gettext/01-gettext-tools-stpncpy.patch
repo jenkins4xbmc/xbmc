@@ -1,0 +1,13 @@
+--- gettext-0.17.orig/gettext-tools/gnulib-lib/stpncpy.c	2010-05-24 05:42:47.000000000 -0400
++++ gettext-0.17/gettext-tools/gnulib-lib/stpncpy.c	2013-01-18 00:46:43.000000000 -0500
+@@ -25,8 +25,10 @@
+ #include <string.h>
+ 
+ #ifndef weak_alias
++#if !defined(__APPLE__) || !defined(__arm__)
+ # define __stpncpy stpncpy
+ #endif
++#endif
+ 
+ /* Copy no more than N bytes of SRC to DST, returning a pointer past the
+    last non-NUL byte written into DST.  */

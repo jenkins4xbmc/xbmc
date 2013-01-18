@@ -20,27 +20,7 @@ ARCHIVE=$(SOURCE).tar.gz
 # using the altered libsmbclient.h.
 export CFLAGS+=-D_FILE_OFFSET_BITS=64 -D_OFF_T_DEFINED_ -Doff_t=off64_t -Dlseek=lseek64
 CONFIGURE= cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
-          ./configure --prefix=$(PREFIX) --host=$(HOST) \
-        SMB_BUILD_CC_NEGATIVE_ENUM_VALUES=yes \
-        libreplace_cv_READDIR_GETDIRENTRIES=no \
-        libreplace_cv_READDIR_GETDENTS=no \
-        linux_getgrouplist_ok=no \
-        samba_cv_REPLACE_READDIR=no \
-        samba_cv_HAVE_WRFILE_KEYTAB=yes \
-        samba_cv_HAVE_GETTIMEOFDAY_TZ=yes \
-        samba_cv_USE_SETREUID=yes \
-        samba_cv_HAVE_KERNEL_OPLOCKS_LINUX=yes \
-        samba_cv_HAVE_IFACE_IFCONF=yes \
-        samba_cv_HAVE_MMAP=yes \
-        samba_cv_HAVE_FCNTL_LOCK=yes \
-        samba_cv_HAVE_SECURE_MKSTEMP=yes \
-        samba_cv_CC_NEGATIVE_ENUM_VALUES=yes \
-        samba_cv_fpie=no \
-        samba_cv_have_longlong=yes \
-        samba_cv_HAVE_OFF64_T=yes \
-	samba_cv_HAVE_UT_UT_TYPE=no \
-        ac_cv_func_srand=yes \
-        ac_cv_func_rand=yes \
+          ./configure --prefix=$(PREFIX) \
         --disable-cups \
         --enable-static \
         --disable-shared \
@@ -68,11 +48,11 @@ CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
-	$(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
+	cd $(TARBALLS_LOCATION); $(RETRIEVE_TOOL) $(RETRIEVE_TOOL_FLAGS) $(BASE_URL)/$(ARCHIVE)
 
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
-	$(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
+	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
 	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-configure.in.patch
 	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-CVE-2010-2063.patch
 	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-silence-receive-warning.patch

@@ -5,7 +5,7 @@
  int snd_user_file(const char *file, char **result);
  
 -#if !defined(_POSIX_C_SOURCE) && !defined(_POSIX_SOURCE)
-+#if 0
++#if !defined(_POSIX_C_SOURCE) && !defined(_POSIX_SOURCE) $$ !defined(ANDROID)
  struct timeval {
  	time_t		tv_sec;		/* seconds */
  	long		tv_usec;	/* microseconds */
