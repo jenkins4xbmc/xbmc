@@ -1,6 +1,6 @@
 #include Makefile.include
 
-BUILDTOOLS = help2man-native gettext-native autoconf-native automake-native libtool-native pkg-config-native yasm-native cmake-native gas-preprocessor-native
+BUILDTOOLS = m4-native help2man-native gettext-native autoconf-native automake-native libtool-native pkg-config-native yasm-native cmake-native gas-preprocessor-native
 
 SUBDIRS = \
 	ncurses pcre expat gettext readline sqlite3 libgpg-error \
@@ -49,6 +49,7 @@ all: subdirs
 	@echo "Dependencies built successfully."
 
 # Dependency layout for parallel builds
+autoconf-native: m4-native
 help2man-native: autoconf-native gettext-native
 automake-native: autoconf-native
 libtool-native: automake-native
