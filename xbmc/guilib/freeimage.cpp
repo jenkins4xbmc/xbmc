@@ -68,8 +68,10 @@ bool CFreeImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize
   FIMEMORY *hmem = FreeImage_OpenMemory(buffer, bufSize);
 
   // load an image from the memory stream
-  FIBITMAP* bitmap2 = FreeImage_LoadFromMemory(fif, hmem, 0);
-  m_fibitmap = FreeImage_ConvertTo32Bits(bitmap2);
+  FIBITMAP* src = FreeImage_LoadFromMemory(fif, hmem, 0);
+  m_fibitmap = FreeImage_ConvertTo32Bits(src);
+  if(m_fibitmap == NULL)
+    return false;
 
   m_hasAlpha = FreeImage_GetColorType(m_fibitmap) == FIC_RGBALPHA ? true : false;
   m_width = FreeImage_GetWidth(m_fibitmap);
@@ -78,7 +80,7 @@ bool CFreeImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize
   m_originalWidth = width;
   m_originalHeight = height;
 
-  FreeImage_Unload(bitmap2);
+  FreeImage_Unload(src);
   FreeImage_CloseMemory(hmem);
   return true;
 }
