@@ -59,6 +59,12 @@ FARPROC WINAPI delayHookNotifyFunc (unsigned dliNotify, PDelayLoadInfo pdli)
         HMODULE hMod = LoadLibraryEx(strDll.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
         return (FARPROC)hMod;
       }
+      if (stricmp(pdli->szDll, "FreeImage.dll") == 0)
+      {
+        CStdString strDll = CSpecialProtocol::TranslatePath("special://xbmcbin/system/FreeImage.dll");
+        HMODULE hMod = LoadLibraryEx(strDll.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+        return (FARPROC)hMod;
+      }
       break;
   }
   return NULL;
