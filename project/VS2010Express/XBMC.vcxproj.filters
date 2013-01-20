@@ -2964,6 +2964,9 @@
     <ClCompile Include="..\..\xbmc\guilib\cximage.cpp">
       <Filter>guilib</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\guilib\freeimage.cpp">
+      <Filter>guilib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\xbmc\win32\pch.h">
@@ -5789,6 +5792,9 @@
       <Filter>guilib</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\guilib\cximage.h">
+      <Filter>guilib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\guilib\freeimage.h">
       <Filter>guilib</Filter>
     </ClInclude>
   </ItemGroup>

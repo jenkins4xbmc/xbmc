@@ -594,6 +594,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug Testsuite|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release (DirectX)|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\guilib\freeimage.cpp" />
     <ClCompile Include="..\..\xbmc\guilib\GraphicContext.cpp" />
     <ClCompile Include="..\..\xbmc\guilib\GUIAction.cpp" />
     <ClCompile Include="..\..\xbmc\guilib\GUIAudioManager.cpp" />
@@ -1039,6 +1040,7 @@
     <ClInclude Include="..\..\xbmc\filesystem\windows\WINFileSMB.h" />
     <ClInclude Include="..\..\xbmc\filesystem\windows\WINSMBDirectory.h" />
     <ClInclude Include="..\..\xbmc\guilib\cximage.h" />
+    <ClInclude Include="..\..\xbmc\guilib\freeimage.h" />
     <ClInclude Include="..\..\xbmc\guilib\GUIKeyboard.h" />
     <ClInclude Include="..\..\xbmc\guilib\GUIKeyboardFactory.h" />
     <ClInclude Include="..\..\xbmc\guilib\iimage.h" />
