@@ -8,7 +8,7 @@ NATIVEPLATFORM=@build_cpu@-@build_os@-native
 SDK_PLATFORM=@use_sdk@
 RETRIEVE_TOOL=@CURL@
 ARCHIVE_TOOL=@TAR@
-PREFIX=@prefix@/@use_host@
+PREFIX=@prefix@/@deps_dir@
 NATIVEPREFIX=@prefix@/@build_cpu@-@build_os@-native
 OS=@platform_os@
 
@@ -36,16 +36,16 @@ READELF=@READELF@
 OBJDUMP=@OBJDUMP@
 
 CMAKE=@prefix@/@build_cpu@-@build_os@-native/bin/cmake -DCMAKE_TOOLCHAIN_FILE=$(PREFIX)/share/Toolchain.cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX)
-CFLAGS=@platform_cflags@ @platform_includes@ -I@prefix@/@use_host@/include
-LDFLAGS=@platform_ldflags@ -L@prefix@/@use_host@/lib
-CXXFLAGS=@platform_cxxflags@ @platform_includes@ -I@prefix@/@use_host@/include
-CPPFLAGS=@platform_cflags@ @platform_includes@ -I@prefix@/@use_host@/include
+CFLAGS=@platform_cflags@ @platform_includes@ -I@prefix@/@deps_dir@/include
+LDFLAGS=@platform_ldflags@ -L@prefix@/@deps_dir@/lib
+CXXFLAGS=@platform_cxxflags@ @platform_includes@ -I@prefix@/@deps_dir@/include
+CPPFLAGS=@platform_cflags@ @platform_includes@ -I@prefix@/@deps_dir@/include
 
 export AUTOM4TE=@prefix@/@build_cpu@-@build_os@-native/bin/autom4te
 export AUTOMAKE=@prefix@/@build_cpu@-@build_os@-native/bin/automake
 export AUTOCONF=@prefix@/@build_cpu@-@build_os@-native/bin/autoconf
 export ACLOCAL=@prefix@/@build_cpu@-@build_os@-native/bin/aclocal
-export ACLOCAL_PATH=@prefix@/@use_host@/share/aclocal:@prefix@/@build_cpu@-@build_os@-native/share/aclocal
+export ACLOCAL_PATH=@prefix@/@deps_dir@/share/aclocal:@prefix@/@build_cpu@-@build_os@-native/share/aclocal
 export LIBTOOL=@prefix@/@build_cpu@-@build_os@-native/bin/libtool
 export LIBTOOLIZE=@prefix@/@build_cpu@-@build_os@-native/bin/libtoolize
 
