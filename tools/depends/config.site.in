@@ -65,7 +65,7 @@ libreplace_cv_HAVE_C99_VSNPRINTF=yes
 samba_cv_HAVE_C99_VSNPRINTF=yes
 ac_cv_header_standards_h=no
 
-if test "${platform_os}" = "android"; then
+if test "@platform_os@" = "android"; then
   #samba
   SMB_BUILD_CC_NEGATIVE_ENUM_VALUES=yes
   libreplace_cv_READDIR_GETDIRENTRIES=no
@@ -88,7 +88,7 @@ if test "${platform_os}" = "android"; then
   ac_cv_func_rand=yes
 fi
 
-if test "${platform_os}" = "ios"; then
+if test "@platform_os@" = "ios"; then
   # tweaks for libffi (ios must use llvm-gcc-4.2)
   if test "${PACKAGE_NAME}" = "libffi" ; then
     export CC="@use_toolchain@/bin/llvm-gcc-4.2"
