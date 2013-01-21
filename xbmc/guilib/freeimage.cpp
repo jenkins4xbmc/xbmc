@@ -44,6 +44,7 @@ CFreeImage::~CFreeImage()
 {
   if(m_fibitmap != NULL)
     FreeImage_Unload(m_fibitmap);
+  ReleaseThumbnailBuffer();
 #ifdef FREEIMAGE_LIB
 	FreeImage_DeInitialise();
 #endif // FREEIMAGE_LIB
@@ -69,9 +70,12 @@ bool CFreeImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize
 
   // load an image from the memory stream
   FIBITMAP* src = FreeImage_LoadFromMemory(fif, hmem, 0);
-  m_fibitmap = FreeImage_ConvertTo32Bits(src);
-  if(m_fibitmap == NULL)
+  if(src == NULL)
+  {
+    FreeImage_CloseMemory(hmem);
     return false;
+  }
+  m_fibitmap = FreeImage_ConvertTo32Bits(src);
 
   m_hasAlpha = FreeImage_GetColorType(m_fibitmap) == FIC_RGBALPHA ? true : false;
   m_width = FreeImage_GetWidth(m_fibitmap);
@@ -87,7 +91,6 @@ bool CFreeImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize
 
 bool CFreeImage::Decode(const unsigned char *pixels, unsigned int pitch, unsigned int format)
 {
-  
   FIBITMAP* bitmap2 = FreeImage_ConvertTo32Bits(m_fibitmap);
   FreeImage_ConvertToRawBits((BYTE*)pixels, bitmap2, pitch, 32, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK, TRUE);
   FreeImage_Unload(m_fibitmap);
@@ -101,13 +104,36 @@ bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned in
   if (!bufferin) 
     return false;
 
+  FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(destFile.c_str());
+  if(fif == FIF_UNKNOWN)
+    return false;
 
+  FIBITMAP* bitmap = FreeImage_ConvertFromRawBits(bufferin, width, height, pitch, 32, FI_RGBA_RED_MASK, FI_RGBA_GREEN_MASK, FI_RGBA_BLUE_MASK, TRUE);
+  FIBITMAP* bitmap2 = FreeImage_ConvertTo24Bits(bitmap);
+  FreeImage_Unload(bitmap);
+
+  m_thumbnailbuffer = FreeImage_OpenMemory();
+  if(FreeImage_SaveToMemory(fif, bitmap2, m_thumbnailbuffer, 0) != TRUE)
+  {
+    ReleaseThumbnailBuffer();
+    FreeImage_Unload(bitmap2);
+    return false;
+  }
+  
+  DWORD size = 0;
+  FreeImage_AcquireMemory(m_thumbnailbuffer, &bufferout, &size);
+  FreeImage_Unload(bitmap2);
+  bufferoutSize = size;
   return true;
 }
 
 void CFreeImage::ReleaseThumbnailBuffer()
 {
-  m_thumbnailbuffer = NULL;
+  if(m_thumbnailbuffer != NULL)
+  {
+    FreeImage_CloseMemory(m_thumbnailbuffer);
+    m_thumbnailbuffer = NULL;
+  }
 }
 
 unsigned int CFreeImage::GetExifOrientation(FIBITMAP *dib)

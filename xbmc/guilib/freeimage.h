@@ -37,7 +37,7 @@ public:
 
 private:
   std::string m_strMimeType;
-  unsigned char* m_thumbnailbuffer;
+  FIMEMORY *m_thumbnailbuffer;
   FIBITMAP *m_fibitmap;
   unsigned int GetExifOrientation(FIBITMAP *dib);
 };
