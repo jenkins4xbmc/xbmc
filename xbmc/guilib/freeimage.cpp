@@ -89,7 +89,7 @@ bool CFreeImage::Decode(const unsigned char *pixels, unsigned int pitch, unsigne
   return true;
 }
 
-bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile,
+bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch,
                                          unsigned char* &bufferout, unsigned int &bufferoutSize)
 {
   if (!bufferin)

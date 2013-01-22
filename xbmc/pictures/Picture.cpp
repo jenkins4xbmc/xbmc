@@ -58,7 +58,7 @@ bool CPicture::CreateThumbnailFromSurface(const unsigned char *buffer, int width
   unsigned char *thumb = NULL;
   unsigned int thumbsize=0;
   IImage* pImage = ImageFactory::CreateLoader(thumbFile);
-  if(pImage == NULL || !pImage->CreateThumbnailFromSurface((BYTE *)buffer, width, height, XB_FMT_A8R8G8B8, stride, thumbFile.c_str(), thumb, thumbsize))
+  if(pImage == NULL || !pImage->CreateThumbnailFromSurface((BYTE *)buffer, width, height, XB_FMT_A8R8G8B8, stride, thumb, thumbsize))
   {
     CLog::Log(LOGERROR, "Failed to CreateThumbnailFromSurface for %s", thumbFile.c_str());
     delete pImage;

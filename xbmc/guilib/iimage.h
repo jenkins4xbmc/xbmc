@@ -52,12 +52,11 @@ public:
    \param height The height of the thumbnail
    \param format The format of the input buffer
    \param pitch The pitch of the input texture
-   \param destFile The destination path of the thumbnail to determine the image format from the extension
    \param bufferout The output buffer (will be allocated inside the method)
    \param bufferoutSize The output buffer size
    \return true if the thumbnail was successfully created
    */
-  virtual bool CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile, 
+  virtual bool CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, 
                                           unsigned char* &bufferout, unsigned int &bufferoutSize)=0;
   /*!
    \brief Frees the output buffer allocated by CreateThumbnailFromSurface
