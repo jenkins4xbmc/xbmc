@@ -40,4 +40,5 @@ private:
   FIMEMORY *m_thumbnailbuffer;
   FIBITMAP *m_fibitmap;
   unsigned int GetExifOrientation(FIBITMAP *dib);
+  FREE_IMAGE_FORMAT GetFIF();
 };

@@ -52,18 +52,9 @@ CFreeImage::~CFreeImage()
 
 bool CFreeImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height)
 {
-  FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromMime(m_strMimeType.c_str());
+  FREE_IMAGE_FORMAT fif = GetFIF();
   if(fif == FIF_UNKNOWN)
-  {
-    std::string strExt = m_strMimeType;
-    int nPos = strExt.find('/');
-    if (nPos > -1)
-      strExt.erase(0, nPos + 1);
-    // try to guess the file format from the file extension
-    fif = FreeImage_GetFIFFromFilename(strExt.c_str());
-    if(fif == FIF_UNKNOWN)
-      return false;
-  }
+    return false;
 
   // attach the binary data to a memory stream
   FIMEMORY *hmem = FreeImage_OpenMemory(buffer, bufSize);
@@ -104,7 +95,7 @@ bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned in
   if (!bufferin)
     return false;
 
-  FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(destFile.c_str());
+  FREE_IMAGE_FORMAT fif = GetFIF();
   if(fif == FIF_UNKNOWN)
     return false;
 
@@ -147,4 +138,19 @@ unsigned int CFreeImage::GetExifOrientation(FIBITMAP *dib)
       return (unsigned int)(*((unsigned short*)FreeImage_GetTagValue(tag)));
   }
   return 0;
+}
+
+FREE_IMAGE_FORMAT CFreeImage::GetFIF()
+{
+  FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromMime(m_strMimeType.c_str());
+  if(fif == FIF_UNKNOWN)
+  {
+    std::string strExt = m_strMimeType;
+    int nPos = strExt.find('/');
+    if (nPos > -1)
+      strExt.erase(0, nPos + 1);
+    // try to guess the file format from the file extension
+    return FreeImage_GetFIFFromFilename(strExt.c_str());
+  }
+  return fif;
 }
