@@ -25,7 +25,7 @@
 #pragma comment(lib, "FreeImage.lib")
 #endif
 
-void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message) 
+void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char *message)
 {
   CLog::Log(LOGERROR, "FreeImageError: Format %s, %s", (fif != FIF_UNKNOWN) ? FreeImage_GetFormatFromFIF(fif) : "unknown", message );
 }
@@ -34,7 +34,7 @@ CFreeImage::CFreeImage(const std::string& strMimeType): m_strMimeType(strMimeTyp
 {
   // call this ONLY when linking with FreeImage as a static library
 #ifdef FREEIMAGE_LIB
-	FreeImage_Initialise();
+  FreeImage_Initialise();
 #endif // FREEIMAGE_LIB
   m_hasAlpha = false;
   FreeImage_SetOutputMessage(FreeImageErrorHandler);
@@ -46,13 +46,13 @@ CFreeImage::~CFreeImage()
     FreeImage_Unload(m_fibitmap);
   ReleaseThumbnailBuffer();
 #ifdef FREEIMAGE_LIB
-	FreeImage_DeInitialise();
+  FreeImage_DeInitialise();
 #endif // FREEIMAGE_LIB
 }
 
 bool CFreeImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height)
 {
-  FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromMime(m_strMimeType.c_str()); 
+  FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromMime(m_strMimeType.c_str());
   if(fif == FIF_UNKNOWN)
   {
     std::string strExt = m_strMimeType;
@@ -98,10 +98,10 @@ bool CFreeImage::Decode(const unsigned char *pixels, unsigned int pitch, unsigne
   return true;
 }
 
-bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile, 
+bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile,
                                          unsigned char* &bufferout, unsigned int &bufferoutSize)
 {
-  if (!bufferin) 
+  if (!bufferin)
     return false;
 
   FREE_IMAGE_FORMAT fif = FreeImage_GetFIFFromFilename(destFile.c_str());
@@ -119,7 +119,7 @@ bool CFreeImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned in
     FreeImage_Unload(bitmap2);
     return false;
   }
-  
+
   DWORD size = 0;
   FreeImage_AcquireMemory(m_thumbnailbuffer, &bufferout, &size);
   FreeImage_Unload(bitmap2);
@@ -139,12 +139,12 @@ void CFreeImage::ReleaseThumbnailBuffer()
 unsigned int CFreeImage::GetExifOrientation(FIBITMAP *dib)
 {
   // check for Exif rotation
-	if(FreeImage_GetMetadataCount(FIMD_EXIF_MAIN, dib)) 
+  if(FreeImage_GetMetadataCount(FIMD_EXIF_MAIN, dib))
   {
     FITAG *tag = NULL;
-		FreeImage_GetMetadata(FIMD_EXIF_MAIN, dib, "Orientation", &tag);
-		if(tag != NULL) 
-      return (unsigned int)FreeImage_GetTagValue(tag);
+    FreeImage_GetMetadata(FIMD_EXIF_MAIN, dib, "Orientation", &tag);
+    if(tag != NULL)
+      return (unsigned int)(*((unsigned short*)FreeImage_GetTagValue(tag)));
   }
   return 0;
 }
