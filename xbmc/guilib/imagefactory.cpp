@@ -21,7 +21,7 @@
 
 #include "imagefactory.h"
 #include "guilib/JpegIO.h"
-#include "guilib/cximage.h"
+#include "guilib/freeimage.h"
 
 IImage* ImageFactory::CreateLoader(const std::string& strFileName)
 {
@@ -38,15 +38,15 @@ IImage* ImageFactory::CreateLoaderFromMimeType(const std::string& strMimeType)
 {
   if(strMimeType == "image/jpeg" || strMimeType == "image/tbn" || strMimeType == "image/jpg")
     return new CJpegIO();
-  return new CXImage(strMimeType);
+  return new CFreeImage(strMimeType);
 }
 
 IImage* ImageFactory::CreateFallbackLoader(const std::string& strMimeType)
 {
-  return new CXImage(strMimeType);
+  return new CFreeImage(strMimeType);
 }
 
 IImage* ImageFactory::CreateFallbackLoader(const CURL& url)
 {
-  return new CXImage("image/"+url.GetFileType());
+  return new CFreeImage("image/"+url.GetFileType());
 }
