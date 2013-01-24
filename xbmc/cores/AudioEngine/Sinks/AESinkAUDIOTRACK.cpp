@@ -228,11 +228,9 @@ bool CAESinkAUDIOTRACK::HasVolume()
   return true;
 }
 
-void  CAESinkAUDIOTRACK::SetVolume(float scale)
+void  CAESinkAUDIOTRACK::SetVolume(float volume)
 {
-  // Android uses fixed steps, reverse scale back to percent
-  float gain = CAEUtil::ScaleToGain(scale);
-  m_volume = CAEUtil::GainToPercent(gain);
+  m_volume = volume;
   m_volume_changed = true;
 }
 
@@ -275,6 +273,7 @@ void CAESinkAUDIOTRACK::Process()
   jmethodID jmRelease           = jenv->GetMethodID(jcAudioTrack, "release", "()V");
   jmethodID jmWrite             = jenv->GetMethodID(jcAudioTrack, "write", "([BII)I");
   jmethodID jmPlayState         = jenv->GetMethodID(jcAudioTrack, "getPlayState", "()I");
+  jmethodID jmSetStereoVolume   = jenv->GetMethodID(jcAudioTrack, "setStereoVolume", "(FF)I");
   jmethodID jmPlayHeadPosition  = jenv->GetMethodID(jcAudioTrack, "getPlaybackHeadPosition", "()I");
   jmethodID jmGetMinBufferSize  = jenv->GetStaticMethodID(jcAudioTrack, "getMinBufferSize", "(III)I");
 
@@ -323,7 +322,8 @@ void CAESinkAUDIOTRACK::Process()
     {
       // check of volume changes and make them,
       // do it here to keep jni calls local to this thread.
-      CXBMCApp::SetSystemVolume(jenv, m_volume);
+      jfloat jvolume = m_volume;
+      jenv->CallIntMethod(joAudioTrack, jmSetStereoVolume, jvolume, jvolume);
       m_volume_changed = false;
     }
     if (m_draining)

@@ -87,7 +87,6 @@ public:
   static bool ListApplications(std::vector <androidPackage> *applications);
   static bool GetIconSize(const std::string &packageName, int *width, int *height);
   static bool GetIcon(const std::string &packageName, void* buffer, unsigned int bufSize); 
-
   /*!
    * \brief If external storage is available, it returns the path for the external storage (for the specified type)
    * \param path will contain the path of the external storage (for the specified type)
@@ -96,7 +95,6 @@ public:
    */
   static bool GetExternalStorage(std::string &path, const std::string &type = "");
   static bool GetStorageUsage(const std::string &path, std::string &usage);
-  static int GetMaxSystemVolume();
 
   static int GetDPI();
 protected:
@@ -108,9 +106,6 @@ protected:
   static int AttachCurrentThread(JNIEnv** p_env, void* thr_args = NULL);
   static int DetachCurrentThread();
 
-  static int GetMaxSystemVolume(JNIEnv *env);
-  static void SetSystemVolume(JNIEnv *env, float percent);
-
 private:
   static bool HasLaunchIntent(const std::string &package);
   bool getWakeLock(JNIEnv *env);
@@ -121,6 +116,7 @@ private:
 
   static ANativeActivity *m_activity;
   jobject m_wakeLock;
+  
   typedef enum {
     // XBMC_Initialize hasn't been executed yet
     Uninitialized,

@@ -202,6 +202,8 @@ RESOLUTION CBaseRenderer::FindClosestResolution(float fps, float multiplier, RES
   /*
    * For 3D modes the following is assumed :
    *
+   * fps is fps * 2 : 25 fps -> 50 fps
+   *
    * side-by-side :
    *
    * width is width / 2 : 1920 -> 960
@@ -225,10 +227,12 @@ RESOLUTION CBaseRenderer::FindClosestResolution(float fps, float multiplier, RES
   if(m_iFlags & CONF_FLAGS_FORMAT_SBS)
   {
     iScreenWidth /= 2;
+    fRefreshRate *= 2;
   }
   else if(m_iFlags & CONF_FLAGS_FORMAT_TB)
   {
     iScreenHeight /= 2;
+    fRefreshRate *= 2;
   }
 
   float last_diff = fRefreshRate;
