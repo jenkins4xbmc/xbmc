@@ -115,7 +115,7 @@ bool CXImage::CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int w
   if (!bufferin || !m_dll.IsLoaded()) 
     return false;
 
-  bool ret = m_dll.CreateThumbnailFromSurface2((BYTE *)bufferin, width, height, pitch, destFile.c_str(), (BYTE *)m_thumbnailbuffer, bufferoutSize);
+  bool ret = m_dll.CreateThumbnailFromSurface2((BYTE *)bufferin, width, height, pitch, destFile.c_str(), m_thumbnailbuffer, bufferoutSize);
   bufferout = m_thumbnailbuffer;
   return ret;
 }

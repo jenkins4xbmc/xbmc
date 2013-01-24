@@ -32,12 +32,12 @@ public:
   virtual bool LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, unsigned int width, unsigned int height);
   virtual bool Decode(const unsigned char *pixels, unsigned int pitch, unsigned int format);
   virtual bool CreateThumbnailFromSurface(unsigned char* bufferin, unsigned int width, unsigned int height, unsigned int format, unsigned int pitch, const CStdString& destFile, 
-                                                   unsigned char* &bufferout, unsigned int &bufferoutSize);
+                                          unsigned char* &bufferout, unsigned int &bufferoutSize);
   virtual void ReleaseThumbnailBuffer();
 
 private:
   DllImageLib m_dll;
   ImageInfo m_image;
-  unsigned char* m_thumbnailbuffer;
+  BYTE* m_thumbnailbuffer;
   std::string m_strMimeType;
 };

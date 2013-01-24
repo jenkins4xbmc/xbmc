@@ -19,6 +19,7 @@
 *  http://www.gnu.org/copyleft/gpl.html
 *
 */
+#include "utils/StdString.h"
 
 class IImage
 {
