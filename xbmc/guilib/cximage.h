@@ -38,6 +38,6 @@ public:
 private:
   DllImageLib m_dll;
   ImageInfo m_image;
-  BYTE* m_thumbnailbuffer;
   std::string m_strMimeType;
+  BYTE* m_thumbnailbuffer;
 };
