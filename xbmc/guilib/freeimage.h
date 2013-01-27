@@ -22,6 +22,7 @@
 
 #include "iimage.h"
 #include <FreeImage.h>
+#include <string>
 
 class CFreeImage : public IImage
 {
