@@ -141,6 +141,8 @@
     #define HAS_SDL_OPENGL
     #define HAS_SDL_WIN_EVENTS
   #endif
+  //used for static freeimage
+  #define FREEIMAGE_LIB
   #define HAS_ZEROCONF
   #define HAS_LINUX_NETWORK
   #define HAS_LCD

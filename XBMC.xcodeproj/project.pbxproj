@@ -404,6 +404,8 @@
 		DF527735151BAF4C00B5B63B /* WebSocketManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF52772D151BAF4C00B5B63B /* WebSocketManager.cpp */; };
 		DF527736151BAF4C00B5B63B /* WebSocketV13.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF52772F151BAF4C00B5B63B /* WebSocketV13.cpp */; };
 		DF527737151BAF4C00B5B63B /* WebSocketV8.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF527731151BAF4C00B5B63B /* WebSocketV8.cpp */; };
+		DF58297F16B706BC001D0972 /* freeimage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF58297A16B706BC001D0972 /* freeimage.cpp */; };
+		DF58298016B706BC001D0972 /* imagefactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF58297C16B706BC001D0972 /* imagefactory.cpp */; };
 		DF673AA51443819600A5A509 /* AddonManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18B49FF41152BFA5001AF8A6 /* AddonManager.cpp */; };
 		DF830D0C15BB260C00602BE6 /* GUIDialogKeyboardGeneric.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF830D0A15BB260C00602BE6 /* GUIDialogKeyboardGeneric.cpp */; };
 		DF830D1215BB262700602BE6 /* GUIKeyboardFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF830D0F15BB262700602BE6 /* GUIKeyboardFactory.cpp */; };
@@ -1932,6 +1934,10 @@
 		DF527730151BAF4C00B5B63B /* WebSocketV13.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebSocketV13.h; sourceTree = "<group>"; };
 		DF527731151BAF4C00B5B63B /* WebSocketV8.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = WebSocketV8.cpp; sourceTree = "<group>"; };
 		DF527732151BAF4C00B5B63B /* WebSocketV8.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = WebSocketV8.h; sourceTree = "<group>"; };
+		DF58297A16B706BC001D0972 /* freeimage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = freeimage.cpp; sourceTree = "<group>"; };
+		DF58297B16B706BC001D0972 /* freeimage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = freeimage.h; sourceTree = "<group>"; };
+		DF58297C16B706BC001D0972 /* imagefactory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = imagefactory.cpp; sourceTree = "<group>"; };
+		DF58297D16B706BC001D0972 /* imagefactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = imagefactory.h; sourceTree = "<group>"; };
 		DF830D0A15BB260C00602BE6 /* GUIDialogKeyboardGeneric.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIDialogKeyboardGeneric.cpp; sourceTree = "<group>"; };
 		DF830D0B15BB260C00602BE6 /* GUIDialogKeyboardGeneric.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIDialogKeyboardGeneric.h; sourceTree = "<group>"; };
 		DF830D0E15BB262700602BE6 /* GUIKeyboard.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIKeyboard.h; sourceTree = "<group>"; };
@@ -3437,6 +3443,8 @@
 				F558F27E13ABD57400631E12 /* DirtyRegionTracker.h */,
 				18B7C7591294222E009E7A26 /* FrameBufferObject.cpp */,
 				18B7C6FB1294222D009E7A26 /* FrameBufferObject.h */,
+				DF58297A16B706BC001D0972 /* freeimage.cpp */,
+				DF58297B16B706BC001D0972 /* freeimage.h */,
 				18B7C6FC1294222D009E7A26 /* Geometry.h */,
 				18B7C75A1294222E009E7A26 /* GraphicContext.cpp */,
 				18B7C6FD1294222D009E7A26 /* GraphicContext.h */,
@@ -3568,6 +3576,8 @@
 				18B7C7991294222E009E7A26 /* GUIWrappingListContainer.cpp */,
 				18B7C73F1294222D009E7A26 /* GUIWrappingListContainer.h */,
 				18B7C7401294222D009E7A26 /* IAudioDeviceChangedCallback.h */,
+				DF58297C16B706BC001D0972 /* imagefactory.cpp */,
+				DF58297D16B706BC001D0972 /* imagefactory.h */,
 				18B7C7411294222D009E7A26 /* IMsgTargetCallback.h */,
 				18B7C79A1294222E009E7A26 /* IWindowManagerCallback.cpp */,
 				18B7C7421294222D009E7A26 /* IWindowManagerCallback.h */,
@@ -7724,6 +7734,8 @@
 				DFB02DEA16629DBA00F37752 /* PyContext.cpp in Sources */,
 				DF07252E168734D7008DCAAD /* karaokevideobackground.cpp in Sources */,
 				DF072534168734ED008DCAAD /* FFmpegVideoDecoder.cpp in Sources */,
+				DF58297F16B706BC001D0972 /* freeimage.cpp in Sources */,
+				DF58298016B706BC001D0972 /* imagefactory.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7813,6 +7825,13 @@
 					"-headerpad_max_install_names",
 					"-all_load",
 					"-L$XBMC_DEPENDS/lib",
+					"-lopenjpeg",
+					"-lmng",
+					"-lrawlite",
+					"-lopenexr",
+					"-ltiff",
+					"-lpng",
+					"-lfreeimage",
 					"-lssh",
 					"-llzo2",
 					"-lpcre",
@@ -7933,6 +7952,13 @@
 					"-headerpad_max_install_names",
 					"-all_load",
 					"-L$XBMC_DEPENDS/lib",
+					"-lopenjpeg",
+					"-lmng",
+					"-lrawlite",
+					"-lopenexr",
+					"-ltiff",
+					"-lpng",
+					"-lfreeimage",
 					"-lssh",
 					"-llzo2",
 					"-lpcre",

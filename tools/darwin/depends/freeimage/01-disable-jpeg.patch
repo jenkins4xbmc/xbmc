@@ -1,0 +1,33 @@
+--- CMakeLists.txt	2012-07-17 14:23:51.000000000 +0200
++++ CMakeLists.txt	2013-01-28 20:59:32.000000000 +0100
+@@ -41,7 +41,7 @@
+ # Process subdirectories
+ 
+ add_subdirectory(dependencies)
+-add_subdirectory(LibJPEG)
++#add_subdirectory(LibJPEG)
+ add_subdirectory(LibMNG)
+ add_subdirectory(LibOpenJPEG)
+ add_subdirectory(LibPNG)
+--- CMakeLists.txt	2013-01-28 21:12:02.000000000 +0100
++++ CMakeLists.txt	2013-01-28 21:11:45.000000000 +0100
+@@ -137,7 +137,7 @@
+          FreeImageToolkit/CopyPaste.cpp
+          FreeImageToolkit/Display.cpp
+          FreeImageToolkit/Flip.cpp
+-         FreeImageToolkit/JPEGTransform.cpp
++#         FreeImageToolkit/JPEGTransform.cpp
+          FreeImageToolkit/MultigridPoissonSolver.cpp
+          FreeImageToolkit/Rescale.cpp
+          FreeImageToolkit/Resize.cpp
+--- dependencies/XMake/XMake.cmake	2013-01-28 19:45:23.000000000 +0100
++++ dependencies/XMake/XMake.cmake	2013-01-28 21:32:10.000000000 +0100
+@@ -482,7 +482,7 @@
+ 
+ # By default: compile in Release mode
+ if (NOT CMAKE_BUILD_TYPE)
+-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
++    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: None (CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
+ endif()
+ 
+ # On MacOS X, by default compile both in 32- and 64-bits
