@@ -30,6 +30,7 @@
 #include "CoreAudioAEStream.h"
 #include "CoreAudioAESound.h"
 #include "threads/CriticalSection.h"
+#include "guilib/DispResource.h"
 
 #if defined(TARGET_DARWIN_IOS)
 #include "CoreAudioAEHALIOS.h"
@@ -57,7 +58,7 @@ class CCoreAudioAEStream;
 class CCoreAudioAESound;
 class CCoreAudioAEEventThread;
 
-class CCoreAudioAE : public IAE, public ICoreAudioSource
+class CCoreAudioAE : public IAE, public ICoreAudioSource, IDispResource
 {
 protected:
   friend class CAEFactory;
@@ -69,6 +70,11 @@ protected:
   CCoreAudioAEHAL  *HAL;
 
 public:
+  //IDispResource interface
+  virtual void OnLostDevice();
+  virtual void OnResetDevice();
+
+  //AE interfaces
   virtual void      Shutdown();
 
   virtual bool      Initialize();
@@ -121,7 +127,7 @@ public:
     const AudioTimeStamp* pTimeStamp, UInt32 busNumber,
     UInt32 frameCount, AudioBufferList* pBufList);
     
-  void AudioDevicesChanged();
+  void AudioDevicesChanged(int delayMs);
 
 
 private:

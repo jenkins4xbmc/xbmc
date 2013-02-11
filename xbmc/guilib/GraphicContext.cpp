@@ -342,10 +342,13 @@ void CGraphicContext::SetVideoResolution(RESOLUTION res, bool forceUpdate)
     int delay = g_guiSettings.GetInt("videoplayer.pauseafterrefreshchange");
     if (delay > 0 && g_guiSettings.GetInt("videoplayer.adjustrefreshrate") != ADJUST_REFRESHRATE_OFF && g_application.IsPlayingVideo() && !g_application.IsPaused())
     {
-      g_application.m_pPlayer->Pause();
-      ThreadMessage msg = {TMSG_MEDIA_UNPAUSE};
-      CDelayedMessage* pauseMessage = new CDelayedMessage(msg, delay * 100);
+      ThreadMessage msg = {TMSG_MEDIA_PAUSE};
+      CDelayedMessage* pauseMessage = new CDelayedMessage(msg, 1000);
       pauseMessage->Create(true);
+
+      msg.dwMessage = TMSG_MEDIA_UNPAUSE;
+      CDelayedMessage* unPauseMessage = new CDelayedMessage(msg, delay * 100 + 1000);
+      unPauseMessage->Create(true);
     }
   }
 

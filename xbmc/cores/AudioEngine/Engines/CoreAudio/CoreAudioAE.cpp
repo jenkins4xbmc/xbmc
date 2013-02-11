@@ -34,6 +34,8 @@
 #include "utils/TimeUtils.h"
 #include "utils/MathUtils.h"
 #include "threads/SystemClock.h"
+#include "windowing/WindowingFactory.h"
+#include "Application.h"
 
 #define DELAY_FRAME_TIME  20
 #define BUFFERSIZE        16416
@@ -51,7 +53,12 @@ OSStatus deviceChangedCB( AudioObjectID                       inObjectID,
                           void*                               inClientData)
 {
   CCoreAudioAE *pEngine = (CCoreAudioAE *)inClientData;
-  pEngine->AudioDevicesChanged();
+
+  // give CA a bit time to realise that maybe the
+  // default device might have changed now - else
+  // OpenCoreAudio might open the old default device
+  // again (yeah that really is the case - duh)
+  pEngine->AudioDevicesChanged(500);
   CLog::Log(LOGDEBUG, "CCoreAudioAE - audiodevicelist changed!");
   return noErr;
 }
@@ -78,6 +85,24 @@ void RegisterDeviceChangedCB(bool bRegister, void *ref)
 void RegisterDeviceChangedCB(bool bRegister, void *ref){}
 #endif
 
+// IDispResource interface
+void CCoreAudioAE::OnLostDevice()
+{
+}
+
+void CCoreAudioAE::OnResetDevice()
+{
+  // if display changes and our audio is going
+  // over HDMI this is most likly because of refreshrate
+  // changing and we need to handle it "a bit" - cause
+  // osx just goes crazy with HDMI audio device in that case
+  if (g_application.m_pPlayer->IsPlaying() && g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI)
+  {
+    AudioDevicesChanged(g_guiSettings.GetInt("videoplayer.pauseafterrefreshchange") * 100);
+    CLog::Log(LOGDEBUG, "CCoreAudioAE::OnResetDevice - display changed!");
+  }
+}
+
 CCoreAudioAE::CCoreAudioAE() :
   m_Initialized        (false         ),
   m_callbackRunning    (false         ),
@@ -98,12 +123,14 @@ CCoreAudioAE::CCoreAudioAE() :
   HAL = new CCoreAudioAEHAL;
   
   RegisterDeviceChangedCB(true, this);
+  g_Windowing.Register(this);
 }
 
 CCoreAudioAE::~CCoreAudioAE()
 {
   RegisterDeviceChangedCB(false, this);
   Shutdown();
+  g_Windowing.Unregister(this);
 }
 
 void CCoreAudioAE::Shutdown()
@@ -136,13 +163,9 @@ void CCoreAudioAE::Shutdown()
   HAL = NULL;
 }
 
-void CCoreAudioAE::AudioDevicesChanged()
+void CCoreAudioAE::AudioDevicesChanged(int delayMs)
 {
-  // give CA a bit time to realise that maybe the 
-  // default device might have changed now - else
-  // OpenCoreAudio might open the old default device
-  // again (yeah that really is the case - duh)
-  Sleep(500);
+  Sleep(delayMs);
   CSingleLock engineLock(m_engineLock);
   OpenCoreAudio(m_lastSampleRate, COREAUDIO_IS_RAW(m_lastStreamFormat), m_lastStreamFormat);
 }
