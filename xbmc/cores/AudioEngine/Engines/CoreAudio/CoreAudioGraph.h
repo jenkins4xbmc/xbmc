@@ -49,6 +49,7 @@ public:
   AudioChannelLayoutTag GetChannelLayoutTag(int layout);
   bool             SetInputSource(ICoreAudioSource *pSource);
   bool             SetCurrentVolume(Float32 vol);
+  Float32          GetCurrentVolume();
   CAUOutputDevice* DestroyUnit(CAUOutputDevice *outputUnit);
   CAUOutputDevice* CreateUnit(AEAudioFormat &format);
   int              GetFreeBus();

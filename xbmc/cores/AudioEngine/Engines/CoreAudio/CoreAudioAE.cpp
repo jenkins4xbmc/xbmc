@@ -34,6 +34,7 @@
 #include "utils/TimeUtils.h"
 #include "utils/MathUtils.h"
 #include "threads/SystemClock.h"
+#include "osx/DarwinUtils.h"
 
 #define DELAY_FRAME_TIME  20
 #define BUFFERSIZE        16416
@@ -328,7 +329,8 @@ bool CCoreAudioAE::OpenCoreAudio(unsigned int sampleRate, bool forceRaw,
       (*itt)->Initialize();
     streamLock.Leave();
   }
-
+  bool hwVolumeAvailable = HAL->SupportsHwVolume();
+  DarwinHotKeysControlXbmcVolume(hwVolumeAvailable);
   return m_Initialized;
 }
 

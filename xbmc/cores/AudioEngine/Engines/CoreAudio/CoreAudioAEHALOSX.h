@@ -66,6 +66,7 @@ public:
   virtual bool  Start();
   virtual double GetDelay();
   virtual void  SetVolume(float volume);
+  virtual bool  SupportsHwVolume();
   virtual unsigned int GetBufferIndex();
   virtual CAUOutputDevice* DestroyUnit(CAUOutputDevice *outputUnit);
   virtual CAUOutputDevice* CreateUnit(ICoreAudioSource *pSource, AEAudioFormat &format);

@@ -41,6 +41,7 @@ extern "C"
   int         DarwinBatteryLevel(void);
   void        DarwinSetScheduling(int message);
   bool        DarwinCFStringRefToString(CFStringRef source, std::string& destination);
+  void        DarwinHotKeysControlXbmcVolume(bool bYes);
 #ifdef __cplusplus
 }
 #endif

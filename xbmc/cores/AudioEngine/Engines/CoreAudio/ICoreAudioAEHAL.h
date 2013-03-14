@@ -46,4 +46,5 @@ public:
   virtual bool   Start() = 0;
   virtual double GetDelay() = 0;
   virtual void   SetVolume(float volume) = 0;
+  virtual bool   SupportsHwVolume(){return true;}
 };

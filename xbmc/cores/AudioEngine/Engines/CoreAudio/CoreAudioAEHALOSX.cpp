@@ -470,8 +470,15 @@ void CCoreAudioAEHALOSX::SetVolume(float volume)
 {
   if (m_encoded || m_Passthrough)
     return;
-
   m_audioGraph->SetCurrentVolume(volume);
+}
+
+bool CCoreAudioAEHALOSX::SupportsHwVolume()
+{
+  if (m_encoded || m_Passthrough)
+    return false;
+  Float32 currentVolume = m_audioGraph->GetCurrentVolume();
+  return m_audioGraph->SetCurrentVolume(currentVolume);
 }
 
 unsigned int CCoreAudioAEHALOSX::GetBufferIndex()

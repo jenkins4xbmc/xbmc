@@ -445,6 +445,14 @@ bool CCoreAudioGraph::SetCurrentVolume(Float32 vol)
   return m_audioUnit->SetCurrentVolume(vol);
 }
 
+Float32 CCoreAudioGraph::GetCurrentVolume()
+{
+  if (!m_audioUnit)
+    return false;
+  
+  return m_audioUnit->GetCurrentVolume();
+}
+
 CAUOutputDevice *CCoreAudioGraph::DestroyUnit(CAUOutputDevice *outputUnit)
 {
   if (!outputUnit)

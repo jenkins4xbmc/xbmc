@@ -42,6 +42,7 @@
 
 #import "AutoPool.h"
 #import "DarwinUtils.h"
+#import "HotKeyController.h"
 
 enum iosPlatform
 {
@@ -405,6 +406,13 @@ bool DarwinCFStringRefToString(CFStringRef source, std::string &destination)
 
   destination = cstr;
   return true;
+}
+
+void DarwinHotKeysControlXbmcVolume(bool bYes)
+{
+#if defined(TARGET_DARWIN_OSX)
+  [[HotKeyController sharedController] sysVolume:bYes?NO:YES];
+#endif
 }
 
 #endif
