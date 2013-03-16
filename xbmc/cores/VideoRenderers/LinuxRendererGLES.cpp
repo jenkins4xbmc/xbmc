@@ -519,7 +519,7 @@ unsigned int CLinuxRendererGLES::PreInit()
   m_bConfigured = false;
   m_bValidated = false;
   UnInit();
-  m_resolution = g_guiSettings.m_LookAndFeelResolution;
+  m_resolution = CDisplaySettings::Get().GetCurrentResolution();
   if ( m_resolution == RES_WINDOW )
     m_resolution = RES_DESKTOP;
 
