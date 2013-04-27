@@ -29,7 +29,6 @@
 #include "DVDStreamInfo.h"
 #include "cores/dvdplayer/DVDCodecs/DVDCodecUtils.h"
 #include "osx/CocoaInterface.h"
-#include "settings/GUISettings.h"
 #include "windowing/WindowingFactory.h"
 #include "utils/BitstreamConverter.h"
 #include "utils/log.h"
@@ -236,7 +235,7 @@ bool CDVDVideoCodecVDA::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
   else
     m_dll = g_DllLibVDADecoder;
 
-  if (g_guiSettings.GetBool("videoplayer.usevda") && !hints.software)
+  if (CSettings::Get().GetBool("videoplayer.usevda") && !hints.software)
   {
     CCocoaAutoPool pool;
 
