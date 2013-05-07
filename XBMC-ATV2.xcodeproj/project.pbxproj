@@ -104,6 +104,8 @@
 		DF07255516873565008DCAAD /* FFmpegVideoDecoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF07255316873565008DCAAD /* FFmpegVideoDecoder.cpp */; };
 		DF08E84515829BA600058C77 /* Exception.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF08E84315829BA600058C77 /* Exception.cpp */; };
 		DF0DF16D13A3AF82008ED511 /* NFSDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF0DF16A13A3AF82008ED511 /* NFSDirectory.cpp */; };
+		DF1734F11739A1660026A04C /* BatchDraw.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF1734ED1739A1660026A04C /* BatchDraw.cpp */; };
+		DF1734F21739A1660026A04C /* SceneGraph.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF1734EF1739A1660026A04C /* SceneGraph.cpp */; };
 		DF23461015FA671900A934F6 /* UPnP.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF23460715FA671900A934F6 /* UPnP.cpp */; };
 		DF23461115FA671900A934F6 /* UPnPInternal.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF23460915FA671900A934F6 /* UPnPInternal.cpp */; };
 		DF23461215FA671900A934F6 /* UPnPRenderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DF23460B15FA671900A934F6 /* UPnPRenderer.cpp */; };
@@ -628,7 +630,6 @@
 		F56C7A08131EC154000AD0F6 /* GUIFontManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7516131EC152000AD0F6 /* GUIFontManager.cpp */; };
 		F56C7A09131EC154000AD0F6 /* GUIFontTTF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7517131EC152000AD0F6 /* GUIFontTTF.cpp */; };
 		F56C7A0A131EC154000AD0F6 /* GUIFontTTFDX.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7518131EC152000AD0F6 /* GUIFontTTFDX.cpp */; };
-		F56C7A0B131EC154000AD0F6 /* GUIFontTTFGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7519131EC152000AD0F6 /* GUIFontTTFGL.cpp */; };
 		F56C7A0C131EC154000AD0F6 /* GUIImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C751A131EC152000AD0F6 /* GUIImage.cpp */; };
 		F56C7A0D131EC154000AD0F6 /* GUIIncludes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C751B131EC152000AD0F6 /* GUIIncludes.cpp */; };
 		F56C7A0E131EC154000AD0F6 /* GUIInfoTypes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C751C131EC152000AD0F6 /* GUIInfoTypes.cpp */; };
@@ -661,8 +662,6 @@
 		F56C7A2B131EC154000AD0F6 /* GUITextLayout.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7539131EC152000AD0F6 /* GUITextLayout.cpp */; };
 		F56C7A2C131EC154000AD0F6 /* GUITexture.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C753A131EC152000AD0F6 /* GUITexture.cpp */; };
 		F56C7A2D131EC154000AD0F6 /* GUITextureD3D.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C753B131EC152000AD0F6 /* GUITextureD3D.cpp */; };
-		F56C7A2E131EC154000AD0F6 /* GUITextureGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C753C131EC152000AD0F6 /* GUITextureGL.cpp */; };
-		F56C7A2F131EC154000AD0F6 /* GUITextureGLES.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C753D131EC152000AD0F6 /* GUITextureGLES.cpp */; };
 		F56C7A30131EC154000AD0F6 /* GUIToggleButtonControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C753E131EC152000AD0F6 /* GUIToggleButtonControl.cpp */; };
 		F56C7A31131EC154000AD0F6 /* GUIVideoControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C753F131EC152000AD0F6 /* GUIVideoControl.cpp */; };
 		F56C7A32131EC154000AD0F6 /* GUIVisualisationControl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7540131EC152000AD0F6 /* GUIVisualisationControl.cpp */; };
@@ -679,7 +678,6 @@
 		F56C7A3D131EC154000AD0F6 /* TextureBundleXBT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C754B131EC152000AD0F6 /* TextureBundleXBT.cpp */; };
 		F56C7A3E131EC154000AD0F6 /* TextureBundleXPR.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C754C131EC152000AD0F6 /* TextureBundleXPR.cpp */; };
 		F56C7A3F131EC154000AD0F6 /* TextureDX.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C754D131EC152000AD0F6 /* TextureDX.cpp */; };
-		F56C7A40131EC154000AD0F6 /* TextureGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C754E131EC152000AD0F6 /* TextureGL.cpp */; };
 		F56C7A41131EC154000AD0F6 /* TextureManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C754F131EC152000AD0F6 /* TextureManager.cpp */; };
 		F56C7A42131EC154000AD0F6 /* VisibleEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7550131EC152000AD0F6 /* VisibleEffect.cpp */; };
 		F56C7A43131EC155000AD0F6 /* XBTF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F56C7551131EC152000AD0F6 /* XBTF.cpp */; };
@@ -1241,6 +1239,10 @@
 		DF08E84415829BA600058C77 /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
 		DF0DF16A13A3AF82008ED511 /* NFSDirectory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = NFSDirectory.cpp; sourceTree = "<group>"; };
 		DF0DF16B13A3AF82008ED511 /* NFSDirectory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NFSDirectory.h; sourceTree = "<group>"; };
+		DF1734ED1739A1660026A04C /* BatchDraw.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BatchDraw.cpp; sourceTree = "<group>"; };
+		DF1734EE1739A1660026A04C /* BatchDraw.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BatchDraw.h; sourceTree = "<group>"; };
+		DF1734EF1739A1660026A04C /* SceneGraph.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SceneGraph.cpp; sourceTree = "<group>"; };
+		DF1734F01739A1660026A04C /* SceneGraph.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SceneGraph.h; sourceTree = "<group>"; };
 		DF1AD01615FCE5C600E10810 /* AddonModuleXbmc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AddonModuleXbmc.cpp; sourceTree = "<group>"; };
 		DF1AD01A15FCE5C600E10810 /* AddonModuleXbmcaddon.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AddonModuleXbmcaddon.cpp; sourceTree = "<group>"; };
 		DF1AD01E15FCE5C600E10810 /* AddonModuleXbmcgui.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AddonModuleXbmcgui.cpp; sourceTree = "<group>"; };
@@ -2387,7 +2389,6 @@
 		F56C74BC131EC152000AD0F6 /* GUIFontManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIFontManager.h; sourceTree = "<group>"; };
 		F56C74BD131EC152000AD0F6 /* GUIFontTTF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIFontTTF.h; sourceTree = "<group>"; };
 		F56C74BE131EC152000AD0F6 /* GUIFontTTFDX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIFontTTFDX.h; sourceTree = "<group>"; };
-		F56C74BF131EC152000AD0F6 /* GUIFontTTFGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIFontTTFGL.h; sourceTree = "<group>"; };
 		F56C74C0131EC152000AD0F6 /* GUIImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIImage.h; sourceTree = "<group>"; };
 		F56C74C1131EC152000AD0F6 /* GUIIncludes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIIncludes.h; sourceTree = "<group>"; };
 		F56C74C2131EC152000AD0F6 /* GUIInfoTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIInfoTypes.h; sourceTree = "<group>"; };
@@ -2420,8 +2421,6 @@
 		F56C74DF131EC152000AD0F6 /* GUITextLayout.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUITextLayout.h; sourceTree = "<group>"; };
 		F56C74E0131EC152000AD0F6 /* GUITexture.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUITexture.h; sourceTree = "<group>"; };
 		F56C74E1131EC152000AD0F6 /* GUITextureD3D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUITextureD3D.h; sourceTree = "<group>"; };
-		F56C74E2131EC152000AD0F6 /* GUITextureGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUITextureGL.h; sourceTree = "<group>"; };
-		F56C74E3131EC152000AD0F6 /* GUITextureGLES.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUITextureGLES.h; sourceTree = "<group>"; };
 		F56C74E4131EC152000AD0F6 /* GUIToggleButtonControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIToggleButtonControl.h; sourceTree = "<group>"; };
 		F56C74E5131EC152000AD0F6 /* GUIVideoControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIVideoControl.h; sourceTree = "<group>"; };
 		F56C74E6131EC152000AD0F6 /* GUIVisualisationControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GUIVisualisationControl.h; sourceTree = "<group>"; };
@@ -2441,7 +2440,6 @@
 		F56C74F4131EC152000AD0F6 /* TextureBundleXBT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextureBundleXBT.h; sourceTree = "<group>"; };
 		F56C74F5131EC152000AD0F6 /* TextureBundleXPR.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextureBundleXPR.h; sourceTree = "<group>"; };
 		F56C74F6131EC152000AD0F6 /* TextureDX.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextureDX.h; sourceTree = "<group>"; };
-		F56C74F7131EC152000AD0F6 /* TextureGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextureGL.h; sourceTree = "<group>"; };
 		F56C74F8131EC152000AD0F6 /* TextureManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextureManager.h; sourceTree = "<group>"; };
 		F56C74F9131EC152000AD0F6 /* TransformMatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TransformMatrix.h; sourceTree = "<group>"; };
 		F56C74FA131EC152000AD0F6 /* Tween.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tween.h; sourceTree = "<group>"; };
@@ -2473,7 +2471,6 @@
 		F56C7516131EC152000AD0F6 /* GUIFontManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIFontManager.cpp; sourceTree = "<group>"; };
 		F56C7517131EC152000AD0F6 /* GUIFontTTF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIFontTTF.cpp; sourceTree = "<group>"; };
 		F56C7518131EC152000AD0F6 /* GUIFontTTFDX.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIFontTTFDX.cpp; sourceTree = "<group>"; };
-		F56C7519131EC152000AD0F6 /* GUIFontTTFGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIFontTTFGL.cpp; sourceTree = "<group>"; };
 		F56C751A131EC152000AD0F6 /* GUIImage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIImage.cpp; sourceTree = "<group>"; };
 		F56C751B131EC152000AD0F6 /* GUIIncludes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIIncludes.cpp; sourceTree = "<group>"; };
 		F56C751C131EC152000AD0F6 /* GUIInfoTypes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIInfoTypes.cpp; sourceTree = "<group>"; };
@@ -2506,8 +2503,6 @@
 		F56C7539131EC152000AD0F6 /* GUITextLayout.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUITextLayout.cpp; sourceTree = "<group>"; };
 		F56C753A131EC152000AD0F6 /* GUITexture.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUITexture.cpp; sourceTree = "<group>"; };
 		F56C753B131EC152000AD0F6 /* GUITextureD3D.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUITextureD3D.cpp; sourceTree = "<group>"; };
-		F56C753C131EC152000AD0F6 /* GUITextureGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUITextureGL.cpp; sourceTree = "<group>"; };
-		F56C753D131EC152000AD0F6 /* GUITextureGLES.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUITextureGLES.cpp; sourceTree = "<group>"; };
 		F56C753E131EC152000AD0F6 /* GUIToggleButtonControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIToggleButtonControl.cpp; sourceTree = "<group>"; };
 		F56C753F131EC152000AD0F6 /* GUIVideoControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIVideoControl.cpp; sourceTree = "<group>"; };
 		F56C7540131EC152000AD0F6 /* GUIVisualisationControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GUIVisualisationControl.cpp; sourceTree = "<group>"; };
@@ -2524,7 +2519,6 @@
 		F56C754B131EC152000AD0F6 /* TextureBundleXBT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TextureBundleXBT.cpp; sourceTree = "<group>"; };
 		F56C754C131EC152000AD0F6 /* TextureBundleXPR.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TextureBundleXPR.cpp; sourceTree = "<group>"; };
 		F56C754D131EC152000AD0F6 /* TextureDX.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TextureDX.cpp; sourceTree = "<group>"; };
-		F56C754E131EC152000AD0F6 /* TextureGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TextureGL.cpp; sourceTree = "<group>"; };
 		F56C754F131EC152000AD0F6 /* TextureManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TextureManager.cpp; sourceTree = "<group>"; };
 		F56C7550131EC152000AD0F6 /* VisibleEffect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = VisibleEffect.cpp; sourceTree = "<group>"; };
 		F56C7551131EC152000AD0F6 /* XBTF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = XBTF.cpp; sourceTree = "<group>"; };
@@ -5165,8 +5159,6 @@
 				F56C74BD131EC152000AD0F6 /* GUIFontTTF.h */,
 				F56C7518131EC152000AD0F6 /* GUIFontTTFDX.cpp */,
 				F56C74BE131EC152000AD0F6 /* GUIFontTTFDX.h */,
-				F56C7519131EC152000AD0F6 /* GUIFontTTFGL.cpp */,
-				F56C74BF131EC152000AD0F6 /* GUIFontTTFGL.h */,
 				F56C751A131EC152000AD0F6 /* GUIImage.cpp */,
 				F56C74C0131EC152000AD0F6 /* GUIImage.h */,
 				F56C751B131EC152000AD0F6 /* GUIIncludes.cpp */,
@@ -5234,10 +5226,6 @@
 				F56C74E0131EC152000AD0F6 /* GUITexture.h */,
 				F56C753B131EC152000AD0F6 /* GUITextureD3D.cpp */,
 				F56C74E1131EC152000AD0F6 /* GUITextureD3D.h */,
-				F56C753C131EC152000AD0F6 /* GUITextureGL.cpp */,
-				F56C74E2131EC152000AD0F6 /* GUITextureGL.h */,
-				F56C753D131EC152000AD0F6 /* GUITextureGLES.cpp */,
-				F56C74E3131EC152000AD0F6 /* GUITextureGLES.h */,
 				F56C753E131EC152000AD0F6 /* GUIToggleButtonControl.cpp */,
 				F56C74E4131EC152000AD0F6 /* GUIToggleButtonControl.h */,
 				F56C753F131EC152000AD0F6 /* GUIVideoControl.cpp */,
@@ -5277,8 +5265,6 @@
 				F56C74F5131EC152000AD0F6 /* TextureBundleXPR.h */,
 				F56C754D131EC152000AD0F6 /* TextureDX.cpp */,
 				F56C74F6131EC152000AD0F6 /* TextureDX.h */,
-				F56C754E131EC152000AD0F6 /* TextureGL.cpp */,
-				F56C74F7131EC152000AD0F6 /* TextureGL.h */,
 				F56C754F131EC152000AD0F6 /* TextureManager.cpp */,
 				F56C74F8131EC152000AD0F6 /* TextureManager.h */,
 				F56C74F9131EC152000AD0F6 /* TransformMatrix.h */,
@@ -5680,8 +5666,12 @@
 			isa = PBXGroup;
 			children = (
 				F56C7BDE131EC3F3000AD0F6 /* gles */,
+				DF1734ED1739A1660026A04C /* BatchDraw.cpp */,
+				DF1734EE1739A1660026A04C /* BatchDraw.h */,
 				F56C76C3131EC153000AD0F6 /* RenderSystem.cpp */,
 				F56C76C4131EC153000AD0F6 /* RenderSystem.h */,
+				DF1734EF1739A1660026A04C /* SceneGraph.cpp */,
+				DF1734F01739A1660026A04C /* SceneGraph.h */,
 			);
 			path = rendering;
 			sourceTree = "<group>";
@@ -7093,7 +7083,6 @@
 				F56C7A08131EC154000AD0F6 /* GUIFontManager.cpp in Sources */,
 				F56C7A09131EC154000AD0F6 /* GUIFontTTF.cpp in Sources */,
 				F56C7A0A131EC154000AD0F6 /* GUIFontTTFDX.cpp in Sources */,
-				F56C7A0B131EC154000AD0F6 /* GUIFontTTFGL.cpp in Sources */,
 				F56C7A0C131EC154000AD0F6 /* GUIImage.cpp in Sources */,
 				F56C7A0D131EC154000AD0F6 /* GUIIncludes.cpp in Sources */,
 				F56C7A0E131EC154000AD0F6 /* GUIInfoTypes.cpp in Sources */,
@@ -7126,8 +7115,6 @@
 				F56C7A2B131EC154000AD0F6 /* GUITextLayout.cpp in Sources */,
 				F56C7A2C131EC154000AD0F6 /* GUITexture.cpp in Sources */,
 				F56C7A2D131EC154000AD0F6 /* GUITextureD3D.cpp in Sources */,
-				F56C7A2E131EC154000AD0F6 /* GUITextureGL.cpp in Sources */,
-				F56C7A2F131EC154000AD0F6 /* GUITextureGLES.cpp in Sources */,
 				F56C7A30131EC154000AD0F6 /* GUIToggleButtonControl.cpp in Sources */,
 				F56C7A31131EC154000AD0F6 /* GUIVideoControl.cpp in Sources */,
 				F56C7A32131EC154000AD0F6 /* GUIVisualisationControl.cpp in Sources */,
@@ -7144,7 +7131,6 @@
 				F56C7A3D131EC154000AD0F6 /* TextureBundleXBT.cpp in Sources */,
 				F56C7A3E131EC154000AD0F6 /* TextureBundleXPR.cpp in Sources */,
 				F56C7A3F131EC154000AD0F6 /* TextureDX.cpp in Sources */,
-				F56C7A40131EC154000AD0F6 /* TextureGL.cpp in Sources */,
 				F56C7A41131EC154000AD0F6 /* TextureManager.cpp in Sources */,
 				F56C7A42131EC154000AD0F6 /* VisibleEffect.cpp in Sources */,
 				F56C7A43131EC155000AD0F6 /* XBTF.cpp in Sources */,
@@ -7767,6 +7753,8 @@
 				DFECFBFD172DA58800A43CF7 /* NetworkServices.cpp in Sources */,
 				F5DB701317322DF700D4DF21 /* FavouritesOperations.cpp in Sources */,
 				DF52568B1732C4620094A464 /* DVDDemuxCDDA.cpp in Sources */,
+				DF1734F11739A1660026A04C /* BatchDraw.cpp in Sources */,
+				DF1734F21739A1660026A04C /* SceneGraph.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
