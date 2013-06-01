@@ -23,6 +23,11 @@ ifeq (@USE_AIRTUNES@, 1)
 SRCS += AirTunesServer.cpp
 endif
 
+ifeq (@USE_ANDROID@,1)
+SRCS += windows/ZeroconfBrowserWIN.cpp
+SRCS += windows/ZeroconfWIN.cpp
+endif
+
 LIB = network.a
 
 include @abs_top_srcdir@/Makefile.include

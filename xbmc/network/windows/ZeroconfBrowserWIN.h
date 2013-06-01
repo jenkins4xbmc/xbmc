@@ -26,13 +26,19 @@
 #include "threads/Thread.h"
 #include "threads/CriticalSection.h"
 #include <dns_sd.h>
+#include "threads/Thread.h"
 
 //platform specific implementation of  zeroconfbrowser interface using native os x APIs
-class CZeroconfBrowserWIN : public CZeroconfBrowser
+class CZeroconfBrowserWIN : public CZeroconfBrowser, public CThread
 {
 public:
   CZeroconfBrowserWIN();
   ~CZeroconfBrowserWIN();
+
+  //CThread
+  virtual void OnStartup();
+  virtual void OnExit();
+  virtual void Process();
 
 private:
   ///implementation if CZeroconfBrowser interface

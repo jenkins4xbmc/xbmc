@@ -22,14 +22,14 @@
 #include "Zeroconf.h"
 #include "settings/Settings.h"
 
-#ifdef _LINUX
+#if defined(_LINUX) && !defined(TARGET_ANDROID)
 #if !defined(TARGET_DARWIN)
 #include "linux/ZeroconfAvahi.h"
 #else
 //on osx use the native implementation
 #include "osx/ZeroconfOSX.h"
 #endif
-#elif defined(TARGET_WINDOWS)
+#elif defined(TARGET_WINDOWS) || defined(TARGET_ANDROID)
 #include "windows/ZeroconfWIN.h"
 #endif
 
@@ -137,9 +137,9 @@ CZeroconf*  CZeroconf::GetInstance()
 #else
 #if defined(TARGET_DARWIN)
     smp_instance = new CZeroconfOSX;
-#elif defined(_LINUX)
+#elif defined(_LINUX) && !defined(TARGET_ANDROID)
     smp_instance  = new CZeroconfAvahi;
-#elif defined(TARGET_WINDOWS)
+#elif defined(TARGET_WINDOWS) || defined(TARGET_ANDROID)
     smp_instance  = new CZeroconfWIN;
 #endif
 #endif

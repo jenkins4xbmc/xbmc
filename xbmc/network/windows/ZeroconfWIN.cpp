@@ -26,7 +26,9 @@
 #include <utils/log.h>
 #include "dialogs/GUIDialogKaiToast.h"
 #include "guilib/LocalizeStrings.h"
+#if defined(TARGET_WINDOWS)
 #include "win32/WIN32Util.h"
+#endif //TARGET_WINDOWS
 
 #pragma comment(lib, "dnssd.lib")
 
@@ -77,9 +79,11 @@ bool CZeroconfWIN::doPublishService(const std::string& fcr_identifier,
       CLog::Log(LOGERROR, "ZeroconfWIN: DNSServiceCreateConnection failed with error = %ld", (int) err);
       return false;
     }
+#if defined(TARGET_WINDOWS)
     err = WSAAsyncSelect( (SOCKET) DNSServiceRefSockFD( m_service ), g_hWnd, BONJOUR_EVENT, FD_READ | FD_CLOSE );
     if (err != kDNSServiceErr_NoError)
       CLog::Log(LOGERROR, "ZeroconfWIN: WSAAsyncSelect failed with error = %ld", (int) err);
+#endif //TARGET_WINDOWS
   }
 
   CLog::Log(LOGDEBUG, "ZeroconfWIN: identifier: %s type: %s name:%s port:%i", fcr_identifier.c_str(), fcr_type.c_str(), fcr_name.c_str(), f_port);
@@ -149,7 +153,10 @@ void CZeroconfWIN::doStop()
   }
   {
     CSingleLock lock(m_data_guard);
+#if defined(TARGET_WINDOWS)
     WSAAsyncSelect( (SOCKET) DNSServiceRefSockFD( m_service ), g_hWnd, BONJOUR_EVENT, 0 );
+#endif //TARGET_WINDOWS
+
     DNSServiceRefDeallocate(m_service);
     m_service = NULL;
   }

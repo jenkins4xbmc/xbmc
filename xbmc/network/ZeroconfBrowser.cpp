@@ -22,14 +22,14 @@
 #include <stdexcept>
 #include "utils/log.h"
 
-#ifdef _LINUX
+#if defined (_LINUX) && !defined(TARGET_ANDROID)
 #if !defined(TARGET_DARWIN)
 #include "linux/ZeroconfBrowserAvahi.h"
 #else
 //on osx use the native implementation
 #include "osx/ZeroconfBrowserOSX.h"
 #endif
-#elif defined(TARGET_WINDOWS)
+#elif defined(TARGET_WINDOWS) || defined(TARGET_ANDROID)
 #include "windows/ZeroconfBrowserWIN.h"
 #endif
 
@@ -158,9 +158,9 @@ CZeroconfBrowser*  CZeroconfBrowser::GetInstance()
 #else
 #if defined(TARGET_DARWIN)
       smp_instance = new CZeroconfBrowserOSX;
-#elif defined(_LINUX)
+#elif defined(_LINUX) && !defined(TARGET_ANDROID)
       smp_instance  = new CZeroconfBrowserAvahi;
-#elif defined(TARGET_WINDOWS)
+#elif defined(TARGET_WINDOWS) || defined(TARGET_ANDROID)
       smp_instance  = new CZeroconfBrowserWIN;
 #endif
 #endif
