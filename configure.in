@@ -135,6 +135,7 @@ halstorage_not_found="== Could not find hal-storage. HAL support disabled. =="
 hal_disabled="== HAL support disabled. =="
 avahi_not_found="== Could not find libavahi-common or libavahi-client. Avahi support disabled. =="
 avahi_disabled="== Avahi support disabled. =="
+mdnsembedded_not_found="== Could not find mDNSEmbedded - zeroconf will be disabled. =="
 vdpau_not_found="== Could not find libvdpau. VDPAU support disabled. =="
 vdpau_disabled="== VDPAU support manually disabled. =="
 vaapi_not_found="== Could not find libva. VAAPI support disabled. =="
@@ -1262,6 +1263,11 @@ else
   fi
 fi
 
+if test "$target_platform" = "target_android" ; then
+  AC_CHECK_LIB([mDNSEmbedded], [embedded_mDNSInit],use_mdnsembedded=yes;AC_DEFINE(HAVE_LIBMDNSEMBEDDED),
+      use_mdnsembedded=no;AC_MSG_RESULT($mdnsembedded_not_found))
+fi
+
 # X11
 if test "$use_x11" = "yes" && test "$host_vendor" != "apple"; then
   AC_MSG_NOTICE($x11_enabled)
@@ -2211,6 +2217,12 @@ if test "$use_avahi" = "yes"; then
   final_message="$final_message\n  Avahi:\tYes"
 else
   final_message="$final_message\n  Avahi:\tNo"
+fi
+
+if test "$use_mdnsembedded" = "yes"; then
+  final_message="$final_message\n  mDNSEmbedded:\tYes"
+else
+  final_message="$final_message\n  mDNSEmbedded:\tNo"
 fi
 
 if test "$use_nonfree" = "yes"; then

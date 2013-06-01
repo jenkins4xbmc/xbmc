@@ -239,6 +239,9 @@
 #if defined(TARGET_ANDROID)
 #undef HAS_LINUX_EVENTS
 #undef HAS_LIRC
+#if defined(HAVE_LIBMDNSEMBEDDED)
+#define  HAS_ZEROCONF
+#endif
 #endif
 
 // EGL detected. Dont use GLX!
