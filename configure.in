@@ -1264,7 +1264,8 @@ else
 fi
 
 if test "$target_platform" = "target_android" ; then
-  AC_CHECK_LIB([mDNSEmbedded], [embedded_mDNSInit],use_mdnsembedded=yes;AC_DEFINE(HAVE_LIBMDNSEMBEDDED),
+  use_mdnsembedded=yes
+  AC_CHECK_LIB([mDNSEmbedded], [embedded_mDNSInit],,
       use_mdnsembedded=no;AC_MSG_RESULT($mdnsembedded_not_found))
 fi
 
