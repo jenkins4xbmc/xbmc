@@ -350,7 +350,7 @@ diff -uPr mDNSResponder-333.10/mDNSCore.orig/mDnsEmbedded.c mDNSResponder-333.10
 diff -uPr mDNSResponder-333.10/mDNSCore.orig/mDnsEmbedded.h mDNSResponder-333.10/mDNSCore/mDnsEmbedded.h
 --- mDNSResponder-333.10/mDNSCore/mDnsEmbedded.h	1970-01-01 01:00:00.000000000 +0100
 +++ mDNSResponder-333.10/mDNSCore/mDnsEmbedded.h	2013-06-01 13:00:29.000000000 +0100
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,32 @@
 +/*                                                                                                                                                                                        
 + *      Copyright (C) 2005-2013 Team XBMC                                                                                                                                                 
 + *      http://www.xbmc.org                                                                                                                                                               
@@ -373,7 +373,13 @@ diff -uPr mDNSResponder-333.10/mDNSCore.orig/mDnsEmbedded.h mDNSResponder-333.10
 +
 +#ifndef _MDNSEMBEDDED_H_
 +#define _MDNSEMBEDDED_H_
-+int embedded_mDNSInit();
-+void embedded_mDNSExit();
-+int embedded_mDNSmainLoop(struct timeval timeout);
++#ifdef __cplusplus                                                                                                                                                                   
++    extern "C" {                                                                                                                                                                  
++#endif
++extern int embedded_mDNSInit();
++extern void embedded_mDNSExit();
++extern int embedded_mDNSmainLoop(struct timeval timeout);
++#ifdef __cplusplus                                                                                                                                                                   
++    }                                                                                                                                                                  
++#endif
 +#endif //_MDNSEMBEDDED_H_

@@ -48,6 +48,7 @@ bool CZeroconfWIN::IsZCdaemonRunning()
 {
   uint32_t version;
   uint32_t size = sizeof(version);
+#if defined(TARGET_WINDOWS)
   DNSServiceErrorType err = DNSServiceGetProperty(kDNSServiceProperty_DaemonVersion, &version, &size);
   if(err != kDNSServiceErr_NoError)
   {
@@ -55,6 +56,7 @@ bool CZeroconfWIN::IsZCdaemonRunning()
     CGUIDialogKaiToast::QueueNotification(CGUIDialogKaiToast::Error, g_localizeStrings.Get(34300), g_localizeStrings.Get(34301), 10000, true);
     return false;
   }
+#endif //TARGET_WINDOWS
   CLog::Log(LOGDEBUG, "ZeroconfWIN:Bonjour version is %d.%d", version / 10000, version / 100 % 100);
   return true;
 }
