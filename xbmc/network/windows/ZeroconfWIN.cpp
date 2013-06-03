@@ -28,20 +28,44 @@
 #include "guilib/LocalizeStrings.h"
 #if defined(TARGET_WINDOWS)
 #include "win32/WIN32Util.h"
+#else
+#include <mDnsEmbedded.h>
 #endif //TARGET_WINDOWS
 
 #pragma comment(lib, "dnssd.lib")
 
 extern HWND g_hWnd;
 
-CZeroconfWIN::CZeroconfWIN()
+void CZeroconfWIN::Process()
+{
+#if defined(TARGET_ANDROID)
+  CLog::Log(LOGDEBUG, "ZeroconfEmbedded - processing...");
+  struct timeval timeout;
+  timeout.tv_sec = 1;
+  while (( !m_bStop ))
+    embedded_mDNSmainLoop(timeout);
+#endif //TARGET_ANDROID
+
+}
+
+
+CZeroconfWIN::CZeroconfWIN()  : CThread("ZerocconfEmbedded")
 {
   m_service = NULL;
+#if defined(TARGET_ANDROID)
+  CLog::Log(LOGDEBUG, "ZeroconfBrowserThread started");
+  embedded_mDNSInit();
+  Create();
+#endif //TARGET_ANDROID
 }
 
 CZeroconfWIN::~CZeroconfWIN()
 {
   doStop();
+#if defined(TARGET_ANDROID)
+  CLog::Log(LOGDEBUG, "ZeroconfBrowserThread exited");
+  embedded_mDNSExit();
+#endif //TARGET_ANDROID
 }
 
 bool CZeroconfWIN::IsZCdaemonRunning()

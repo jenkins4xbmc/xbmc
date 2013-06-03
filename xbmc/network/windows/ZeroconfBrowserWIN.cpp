@@ -26,8 +26,6 @@
 #include "GUIUserMessages.h"
 #if defined(TARGET_WINDOWS)
 #include "win32/WIN32Util.h"
-#else
-#include <mDnsEmbedded.h>
 #endif //TARGET_WINDOWS
 #include "network/DNSNameCache.h"
 
@@ -36,36 +34,7 @@
 extern HWND g_hWnd;
 
 
-void CZeroconfBrowserWIN::OnStartup()
-{
-#if defined(TARGET_ANDROID)
-  CLog::Log(LOGDEBUG, "ZeroconfBrowserThread started");
-  embedded_mDNSInit();
-#endif //TARGET_ANDROID
-
-}
-
-void CZeroconfBrowserWIN::OnExit()
-{
-#if defined(TARGET_ANDROID)
-  CLog::Log(LOGDEBUG, "ZeroconfBrowserThread exited");
-  embedded_mDNSExit();
-#endif //TARGET_ANDROID
-
-}
-
-void CZeroconfBrowserWIN::Process()
-{
-#if defined(TARGET_ANDROID)
-  struct timeval timeout;
-  timeout.tv_sec = 1;
-  while (( !m_bStop ))
-    embedded_mDNSmainLoop(timeout);
-#endif //TARGET_ANDROID
-
-}
-
-CZeroconfBrowserWIN::CZeroconfBrowserWIN()  : CThread("ZerocconfEmbedded")
+CZeroconfBrowserWIN::CZeroconfBrowserWIN()
 {
   m_browser = NULL;
 }
