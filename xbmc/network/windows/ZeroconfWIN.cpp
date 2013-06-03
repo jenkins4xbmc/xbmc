@@ -75,13 +75,13 @@ bool CZeroconfWIN::doPublishService(const std::string& fcr_identifier,
 
   if(m_service == NULL)
   {
-    err = DNSServiceCreateConnection(&m_service);
+#if defined(TARGET_WINDOWS)
+    err = DNSServicecCreateConnection(&m_service);
     if (err != kDNSServiceErr_NoError)
     {
       CLog::Log(LOGERROR, "ZeroconfWIN: DNSServiceCreateConnection failed with error = %ld", (int) err);
       return false;
     }
-#if defined(TARGET_WINDOWS)
     err = WSAAsyncSelect( (SOCKET) DNSServiceRefSockFD( m_service ), g_hWnd, BONJOUR_EVENT, FD_READ | FD_CLOSE );
     if (err != kDNSServiceErr_NoError)
       CLog::Log(LOGERROR, "ZeroconfWIN: WSAAsyncSelect failed with error = %ld", (int) err);

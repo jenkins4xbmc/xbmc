@@ -232,13 +232,13 @@ bool CZeroconfBrowserWIN::doAddServiceType(const CStdString& fcr_service_type)
 
   if(m_browser == NULL)
   {
+#if defined(TARGET_WINDOWS)
     err = DNSServiceCreateConnection(&m_browser);
     if (err != kDNSServiceErr_NoError)
     {
       CLog::Log(LOGERROR, "ZeroconfBrowserWIN: DNSServiceCreateConnection failed with error = %ld", (int) err);
       return false;
     }
-#if defined(TARGET_WINDOWS)
     err = WSAAsyncSelect( (SOCKET) DNSServiceRefSockFD( m_browser ), g_hWnd, BONJOUR_BROWSER_EVENT, FD_READ | FD_CLOSE );
     if (err != kDNSServiceErr_NoError)
       CLog::Log(LOGERROR, "ZeroconfBrowserWIN: WSAAsyncSelect failed with error = %ld", (int) err);
