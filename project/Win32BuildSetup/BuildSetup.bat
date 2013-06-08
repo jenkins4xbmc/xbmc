@@ -41,12 +41,23 @@ SET buildconfig=Release (DirectX)
 IF %target%==gl SET buildconfig=Release (OpenGL)
 
 IF %comp%==vs2010 (
-  IF "%VS100COMNTOOLS%"=="" (
-		set NET="%ProgramFiles%\Microsoft Visual Studio 10.0\Common7\IDE\VCExpress.exe"
-	) ELSE IF EXIST "%VS100COMNTOOLS%\..\IDE\VCExpress.exe" (
-		set NET="%VS100COMNTOOLS%\..\IDE\VCExpress.exe"
-	) ELSE IF EXIST "%VS100COMNTOOLS%\..\IDE\devenv.exe" (
-		set NET="%VS100COMNTOOLS%\..\IDE\devenv.exe"
+  IF EXIST "C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" (
+	set NET="C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe"
+
+	set msbuildemitsolution=1
+	set OPTS_EXE="..\VS2010Express\XBMC for Windows.sln" /t:Build /p:Configuration="%buildconfig%"
+		set CLEAN_EXE="..\VS2010Express\XBMC for Windows.sln" /t:Clean /p:Configuration="%buildconfig%"
+	) ELSE (
+	IF "%VS100COMNTOOLS%"=="" (
+			set NET="%ProgramFiles%\Microsoft Visual Studio 10.0\Common7\IDE\VCExpress.exe"
+		) ELSE IF EXIST "%VS100COMNTOOLS%\..\IDE\VCExpress.exe" (
+			set NET="%VS100COMNTOOLS%\..\IDE\VCExpress.exe"
+		) ELSE IF EXIST "%VS100COMNTOOLS%\..\IDE\devenv.exe" (
+			set NET="%VS100COMNTOOLS%\..\IDE\devenv.exe"
+		)
+
+		set OPTS_EXE="..\VS2010Express\XBMC for Windows.sln" /build "%buildconfig%"
+		set CLEAN_EXE="..\VS2010Express\XBMC for Windows.sln" /clean "%buildconfig%"
 	)
 )
 
@@ -55,8 +66,6 @@ IF %comp%==vs2010 (
 	 goto DIE
   )
   
-  set OPTS_EXE="..\VS2010Express\XBMC for Windows.sln" /build "%buildconfig%"
-  set CLEAN_EXE="..\VS2010Express\XBMC for Windows.sln" /clean "%buildconfig%"
   set EXE= "..\VS2010Express\XBMC\%buildconfig%\XBMC.exe"
   set PDB= "..\VS2010Express\XBMC\%buildconfig%\XBMC.pdb"
   
