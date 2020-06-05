@@ -1,28 +1,28 @@
-# global patterns
+ global patterns
 testMain
 
-# commonly used editors
-# vim
+ commonly used editors
+ vim
 *.swp
-# Eclipse
+ Eclipse
 *.project
 *.cproject
 .classpath
 *.sublime-*
-# KDevelop 4
+ KDevelop 4
 *.kdev4
-# gedit
+ gedit
 *~
-# CLion
+ CLion
 /.idea
 .vscode/
-# Created in vs2017 when using open folder
+ Created in vs2017 when using open folder
 .vs/
 
-# Created in vs2017 when using open folder with cmake tools
+ Created in vs2017 when using open folder with cmake tools
 CMakeSettings.json
 
-# generated files etc
+ generated files etc
 .last_success_revision
 *.d
 *.depend
@@ -43,7 +43,7 @@ CMakeSettings.json
 *.class
 *.dwo
 
-# Windows specific generated files
+ Windows specific generated files
 *.appx
 *.cer
 *.exp
@@ -91,7 +91,7 @@ cmake_install.cmake
 
 /nbproject
 
-# /
+/
 /kodi.log
 /kodi.old.log
 /kodi.bin
@@ -101,7 +101,7 @@ cmake_install.cmake
 /kodi-build*/
 /gtestresults.xml
 
-# /addons/
+/addons/
 /addons/packages
 /addons/skin.estuary/media/Makefile
 /addons/skin.estuary/media/*.xbt
@@ -138,12 +138,12 @@ cmake_install.cmake
 /addons/inputstream.*
 /addons/vfs.*
 
-# /lib/
+/lib/
 /lib/Makefile
 /lib/*/1
 /lib/*/win32/1
 
-# /lib/gtest
+/lib/gtest
 /lib/gtest/Makefile.in
 /lib/gtest/aclocal.m4
 /lib/gtest/build-aux/compile
@@ -175,11 +175,11 @@ cmake_install.cmake
 /lib/gtest/scripts/gtest-config
 /lib/gtest/src/.dirstamp
 
-# /project
+/project
 /project/obj
 /project/output
 
-# /cmake
+/cmake
 /cmake/KodiConfig.cmake
 /cmake/addons/*.error
 /cmake/addons/.failure
@@ -189,7 +189,7 @@ cmake_install.cmake
 /cmake/addons/depends/build
 /cmake/addons/output
 
-# /project/Win32BuildSetup/
+/project/Win32BuildSetup/
 /project/Win32BuildSetup/*.log
 /project/Win32BuildSetup/*.exe
 /project/Win32BuildSetup/*.pdb
@@ -200,7 +200,7 @@ cmake_install.cmake
 /project/Win32BuildSetup/noprompt
 /project/Win32BuildSetup/BUILD_WIN32/
 
-# /project/BuildDependencies
+/project/BuildDependencies
 /project/BuildDependencies/downloads
 /project/BuildDependencies/downloads2
 /project/BuildDependencies/msys32
@@ -219,21 +219,21 @@ cmake_install.cmake
 /project/BuildDependencies/win10-win32
 /project/BuildDependencies/win32
 
-# /system/players/VideoPlayer
+/system/players/VideoPlayer
 /system/players/VideoPlayer/*
 
-# /system
+/system
 /system/profiles.xml
 
-# /system/python
+/system/python
 /system/python/
 
-# /system/webserver
+/system/webserver
 /system/webserver
 
 /system/airplay
 
-#/tools/android
+/tools/android
 /tools/android/packaging/Makefile
 /tools/android/packaging/xbmc/activity_main.xml
 /tools/android/packaging/xbmc/AndroidManifest.xml
@@ -247,7 +247,7 @@ cmake_install.cmake
 /tools/android/packaging/xbmc/src/org/xbmc/kodi/XBMCVideoView.java
 /tools/android/packaging/xbmc/strings.xml
 
-#/tools/depends
+/tools/depends
 /tools/depends/**/config.cache
 /tools/depends/**/config.log
 /tools/depends/**/config.status
@@ -272,14 +272,14 @@ cmake_install.cmake
 /tools/depends/target/config-binaddons.site
 /tools/depends/target/binary-addons/native
 
-# /tools/EventClients/
+/tools/EventClients/
 /tools/EventClients/*.pyc
 /tools/EventClients/Makefile
 /tools/EventClients/Clients/OSXRemote/Makefile
 /tools/EventClients/Clients/OSXRemote/build/
 /tools/EventClients/Clients/WiiRemote/WiiRemote
 
-# /tools/darwin/
+/tools/darwin/
 /tools/darwin/Configurations/App.xcconfig
 /tools/darwin/Configurations/Common.xcconfig
 /tools/darwin/packaging/darwin_embedded/mkdeb-darwin_embedded.sh
@@ -289,40 +289,40 @@ cmake_install.cmake
 /tools/darwin/packaging/seatbeltunlock/mkdeb-seatbeltunlock.sh
 /tools/darwin/runtime/XBMCHelper
 
-# /tools/Linux/
+/tools/Linux/
 /tools/Linux/kodi.sh
 /tools/Linux/kodi-standalone.sh
 /tools/Linux/kodi-xsession.desktop
 
-# /tools/osx
+/tools/osx
 /tools/osx/XBMCHelper
 
-# /tools/TexturePacker
+/tools/TexturePacker
 /tools/TexturePacker/TexturePacker*
 /tools/TexturePacker/Makefile
 
-# /userdata/
+/userdata/
 /userdata/Database
 /userdata/playlists
 /userdata/Thumbnails
 /userdata/cache
 /userdata/guisettings.xml
 
-#/lib/win32
+/lib/win32
 /lib/win32/*.tar*
 /lib/win32/pax_global_header
 
 /lib/libUPnP/Makefile
 
-# /portable_data
+/portable_data
 /portable_data
 
 /pvr-addons
 
-# Doxygen generated files
+Doxygen generated files
 /docs/html
 exclude_dll.txt
 
 # VS git tools doesn't work for true out of tree builds and it's
 # useful to be able to work on multiple configs
-/build*/
+/Kodi-build*/
