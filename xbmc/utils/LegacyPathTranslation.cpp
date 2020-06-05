@@ -1,24 +1,14 @@
 /*
- *      Copyright (C) 2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2013-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with this program; if not, write to the Free Software Foundation, Inc.,
- *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "LegacyPathTranslation.h"
+
+#include "URL.h"
 #include "utils/StringUtils.h"
 
 typedef struct Translator {
@@ -79,6 +69,15 @@ static Translator s_musicDbTranslator[] = {
 
 #define MusicDbTranslatorSize sizeof(s_musicDbTranslator) / sizeof(Translator)
 
+std::string CLegacyPathTranslation::TranslateVideoDbPath(const CURL &legacyPath)
+{
+  return TranslatePath(legacyPath.Get(), s_videoDbTranslator, VideoDbTranslatorSize);
+}
+
+std::string CLegacyPathTranslation::TranslateMusicDbPath(const CURL &legacyPath)
+{
+  return TranslatePath(legacyPath.Get(), s_musicDbTranslator, MusicDbTranslatorSize);
+}
 
 std::string CLegacyPathTranslation::TranslateVideoDbPath(const std::string &legacyPath)
 {
@@ -95,7 +94,7 @@ std::string CLegacyPathTranslation::TranslatePath(const std::string &legacyPath,
   std::string newPath = legacyPath;
   for (size_t index = 0; index < translationMapSize; index++)
   {
-    if (StringUtils::StartsWith(newPath, translationMap[index].legacyPath))
+    if (StringUtils::StartsWithNoCase(newPath, translationMap[index].legacyPath))
     {
       StringUtils::Replace(newPath, translationMap[index].legacyPath, translationMap[index].newPath);
       break;

@@ -1,23 +1,14 @@
-#pragma once
 /*
- *      Copyright (C) 2012-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2012-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
+
+#pragma once
+
+#include "media/MediaType.h"
 
 #include <map>
 #include <memory>
@@ -54,17 +45,31 @@ typedef enum {
   FieldBitrate,
   FieldListeners,
   FieldPlaylist,
+  FieldVirtualFolder,
   FieldRandom,
   FieldDateTaken,
+  FieldAudioCount,
+  FieldSubtitleCount,
+
+  FieldInstallDate,
+  FieldLastUpdated,
+  FieldLastUsed,
 
   // fields retrievable from the database
   FieldId,
   FieldGenre,
   FieldAlbum,
+  FieldDiscTitle,
+  FieldIsBoxset,
+  FieldTotalDiscs,
+  FieldOrigYear,
+  FieldOrigDate,
   FieldArtist,
+  FieldArtistSort,
   FieldAlbumArtist,
   FieldTitle,
   FieldSortTitle,
+  FieldOriginalTitle,
   FieldYear,
   FieldTime,
   FieldTrackNumber,
@@ -75,6 +80,7 @@ typedef enum {
   FieldInProgress,
   FieldRating,
   FieldComment,
+  FieldRole,
   FieldDateAdded,
   FieldTvShowTitle,
   FieldPlot,
@@ -104,6 +110,8 @@ typedef enum {
   FieldStyles,
   FieldAlbumType,
   FieldMusicLabel,
+  FieldCompilation,
+  FieldSource,
   FieldTrailer,
   FieldVideoResolution,
   FieldVideoAspectRatio,
@@ -115,30 +123,30 @@ typedef enum {
   FieldProductionCode,
   FieldTag,
   FieldChannelName,
+  FieldChannelNumber,
   FieldInstruments,
   FieldBiography,
+  FieldArtistType,
+  FieldGender,
+  FieldDisambiguation,
   FieldBorn,
   FieldBandFormed,
   FieldDisbanded,
-  FieldDied
+  FieldDied,
+  FieldStereoMode,
+  FieldUserRating,
+  FieldRelevance, // Used for actors' appearances
+  FieldClientChannelOrder,
+  FieldBPM,
+  FieldMusicBitRate,
+  FieldSampleRate,
+  FieldNoOfChannels,
+  FieldAlbumStatus,
+  FieldMax
 } Field;
 
 typedef std::set<Field> Fields;
 typedef std::vector<Field> FieldList;
-
-typedef enum {
-  MediaTypeNone = 0,
-  MediaTypeMusic,
-  MediaTypeArtist,
-  MediaTypeAlbum,
-  MediaTypeSong,
-  MediaTypeVideo,
-  MediaTypeVideoCollection,
-  MediaTypeMusicVideo,
-  MediaTypeMovie,
-  MediaTypeTvShow,
-  MediaTypeEpisode
-} MediaType;
 
 typedef enum {
   DatabaseQueryPartSelect,
@@ -152,15 +160,20 @@ typedef std::vector<DatabaseResult> DatabaseResults;
 class DatabaseUtils
 {
 public:
-  static std::string MediaTypeToString(MediaType mediaType);
-  static MediaType MediaTypeFromString(const std::string &strMediaType);
+  static MediaType MediaTypeFromVideoContentType(int videoContentType);
 
-  static std::string GetField(Field field, MediaType mediaType, DatabaseQueryPart queryPart);
-  static int GetFieldIndex(Field field, MediaType mediaType);
-  static bool GetSelectFields(const Fields &fields, MediaType mediaType, FieldList &selectFields);
-  
+  static std::string GetField(Field field, const MediaType &mediaType, DatabaseQueryPart queryPart);
+  static int GetField(Field field, const MediaType &mediaType);
+  static int GetFieldIndex(Field field, const MediaType &mediaType);
+  static bool GetSelectFields(const Fields &fields, const MediaType &mediaType, FieldList &selectFields);
+
   static bool GetFieldValue(const dbiplus::field_value &fieldValue, CVariant &variantValue);
-  static bool GetDatabaseResults(MediaType mediaType, const FieldList &fields, const std::auto_ptr<dbiplus::Dataset> &dataset, DatabaseResults &results);
+  static bool GetDatabaseResults(const MediaType &mediaType, const FieldList &fields, const std::unique_ptr<dbiplus::Dataset> &dataset, DatabaseResults &results);
 
   static std::string BuildLimitClause(int end, int start = 0);
+  static std::string BuildLimitClauseOnly(int end, int start = 0);
+  static size_t GetLimitCount(int end, int start);
+
+private:
+  static int GetField(Field field, const MediaType &mediaType, bool asIndex);
 };

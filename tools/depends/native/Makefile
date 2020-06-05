@@ -4,16 +4,23 @@ ifneq ($(shell test -f $(NATIVEPREFIX)/share/config.site && echo 1),1)
   $(error Error: $(NATIVEPREFIX)/share/config.site  is missing. Please reconfigure depends to generate it)
 endif
 
-NATIVE= m4-native gettext-native autoconf-native automake-native \
-        libtool-native pkg-config-native yasm-native cmake-native \
-        gas-preprocessor-native python26-native zlib-native \
-        pcre-native swig-native rpl-native libsdl_image-native \
-        tiff-native libpng-native libjpeg-turbo-native liblzo2-native \
-        libsdl-native distribute-native distutilscross-native
+NATIVE= m4 gettext heimdal autoconf automake \
+        libtool pkg-config yasm nasm cmake \
+        gas-preprocessor libffi python3 zlib \
+        pcre swig \
+        libpng libjpeg-turbo liblzo2 giflib \
+        setuptools distutilscross JsonSchemaBuilder TexturePacker \
+        flatbuffers \
+        meson ninja
 
 
-ifeq ($(OS),ios)
-  NATIVE += dpkg-native tar-native
+ifeq ($(OS),darwin_embedded)
+  NATIVE += dpkg xz tar gen_entitlements ldid
+endif
+
+ifeq ($(TARGET_PLATFORM),wayland)
+  NATIVE += expat wayland-scanner waylandpp-scanner
+  EXPAT = expat
 endif
 
 .PHONY: $(NATIVE) native
@@ -22,18 +29,28 @@ all: native
 	@echo "Dependencies built successfully."
 
 # Dependency layout for parallel builds
-autoconf-native: m4-native
-automake-native: autoconf-native
-libtool-native: automake-native
-libpng-native: zlib-native
-tiff-native: libjpeg-turbo-native
-swig-native: pcre-native
-libsdl_image-native: libsdl-native libpng-native libjpeg-turbo-native tiff-native
-distribute-native: python26-native
-distutilscross-native: python26-native distribute-native
+autoconf: m4
+automake: autoconf
+dpkg: automake gettext libtool pkg-config tar
+flatbuffers: cmake
+heimdal: libtool
+libtool: automake
+libjpeg-turbo: cmake yasm
+libpng: zlib
+meson: python3 setuptools
+ninja: python3
+swig: pcre
+distutilscross: python3
+tar: xz automake
+python3: $(EXPAT) libffi pkg-config zlib
+setuptools: python3
+wayland-scanner: expat
+waylandpp-scanner: cmake
 
 #liblzo2 has stale packaged automake files that cause borked host/build detection
-liblzo2-native: automake-native
+liblzo2: automake
+JsonSchemaBuilder: automake
+TexturePacker: automake pkg-config libpng liblzo2 giflib libjpeg-turbo
 
 native: $(NATIVE)
 $(NATIVE):

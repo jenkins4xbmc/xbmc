@@ -1,57 +1,54 @@
+/*
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
+ *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
+ */
+
+#pragma once
+
 /*!
 \file GUIListContainer.h
 \brief
 */
 
-#pragma once
-
-/*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
- *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
- */
-
+#include "GUIAction.h"
 #include "IGUIContainer.h"
-#include "GUIListItemLayout.h"
 #include "utils/Stopwatch.h"
+
+#include <list>
+#include <utility>
+#include <vector>
 
 /*!
  \ingroup controls
  \brief
  */
 
+class IListProvider;
+class TiXmlNode;
+class CGUIListItemLayout;
+
 class CGUIBaseContainer : public IGUIContainer
 {
 public:
   CGUIBaseContainer(int parentID, int controlID, float posX, float posY, float width, float height, ORIENTATION orientation, const CScroller& scroller, int preloadItems);
-  virtual ~CGUIBaseContainer(void);
+  CGUIBaseContainer(const CGUIBaseContainer &);
+  ~CGUIBaseContainer(void) override;
 
-  virtual bool OnAction(const CAction &action);
-  virtual void OnDown();
-  virtual void OnUp();
-  virtual void OnLeft();
-  virtual void OnRight();
-  virtual bool OnMouseOver(const CPoint &point);
-  virtual bool CanFocus() const;
-  virtual bool OnMessage(CGUIMessage& message);
-  virtual void SetFocus(bool bOnOff);
-  virtual void AllocResources();
-  virtual void FreeResources(bool immediately = false);
-  virtual void UpdateVisibility(const CGUIListItem *item = NULL);
+  bool OnAction(const CAction &action) override;
+  void OnDown() override;
+  void OnUp() override;
+  void OnLeft() override;
+  void OnRight() override;
+  bool OnMouseOver(const CPoint &point) override;
+  bool CanFocus() const override;
+  bool OnMessage(CGUIMessage& message) override;
+  void SetFocus(bool bOnOff) override;
+  void AllocResources() override;
+  void FreeResources(bool immediately = false) override;
+  void UpdateVisibility(const CGUIListItem *item = NULL) override;
 
   virtual unsigned int GetRows() const;
 
@@ -60,24 +57,26 @@ public:
 
   void SetPageControl(int id);
 
-  virtual CStdString GetDescription() const;
-  virtual void SaveStates(std::vector<CControlState> &states);
+  std::string GetDescription() const override;
+  void SaveStates(std::vector<CControlState> &states) override;
   virtual int GetSelectedItem() const;
 
-  virtual void DoProcess(unsigned int currentTime, CDirtyRegionList &dirtyregions);
-  virtual void Process(unsigned int currentTime, CDirtyRegionList &dirtyregions);
+  void DoProcess(unsigned int currentTime, CDirtyRegionList &dirtyregions) override;
+  void Process(unsigned int currentTime, CDirtyRegionList &dirtyregions) override;
 
   void LoadLayout(TiXmlElement *layout);
-  void LoadContent(TiXmlElement *content);
-  void SetDefaultControl(int id, bool always) { m_staticDefaultItem = id; m_staticDefaultAlways = always; };
+  void LoadListProvider(TiXmlElement *content, int defaultItem, bool defaultAlways);
 
-  virtual CGUIListItemPtr GetListItem(int offset, unsigned int flag = 0) const;
+  CGUIListItemPtr GetListItem(int offset, unsigned int flag = 0) const override;
 
-  virtual bool GetCondition(int condition, int data) const;
-  virtual CStdString GetLabel(int info) const;
+  bool GetCondition(int condition, int data) const override;
+  std::string GetLabel(int info) const override;
 
-  void SetStaticContent(const std::vector<CGUIListItemPtr> &items, bool forceUpdate = true);
-  
+  /*! \brief Set the list provider for this container (for python).
+   \param provider the list provider to use for this container.
+   */
+  void SetListProvider(IListProvider *provider);
+
   /*! \brief Set the offset of the first item in the container from the container's position
    Useful for lists/panels where the focused item may be larger than the non-focused items and thus
    normally cut off from the clipping window defined by the container's position + size.
@@ -85,16 +84,24 @@ public:
    */
   void SetRenderOffset(const CPoint &offset);
 
+  void SetClickActions(const CGUIAction& clickActions) { m_clickActions = clickActions; };
+  void SetFocusActions(const CGUIAction& focusActions) { m_focusActions = focusActions; };
+  void SetUnFocusActions(const CGUIAction& unfocusActions) { m_unfocusActions = unfocusActions; };
+
+  void SetAutoScrolling(const TiXmlNode *node);
+  void ResetAutoScrolling();
+  void UpdateAutoScrolling(unsigned int currentTime);
+
 #ifdef _DEBUG
-  virtual void DumpTextureUse();
+  void DumpTextureUse() override;
 #endif
 protected:
-  virtual EVENT_RESULT OnMouseEvent(const CPoint &point, const CMouseEvent &event);
+  EVENT_RESULT OnMouseEvent(const CPoint &point, const CMouseEvent &event) override;
   bool OnClick(int actionID);
 
   virtual void ProcessItem(float posX, float posY, CGUIListItemPtr& item, bool focused, unsigned int currentTime, CDirtyRegionList &dirtyregions);
 
-  virtual void Render();
+  void Render() override;
   virtual void RenderItem(float posX, float posY, CGUIListItem *item, bool focused);
   virtual void Scroll(int amount);
   virtual bool MoveDown(bool wrapAround);
@@ -107,25 +114,24 @@ protected:
   virtual void UpdatePageControl(int offset);
   virtual void CalculateLayout();
   virtual void SelectItem(int item) {};
-  void SelectStaticItemById(int id);
   virtual bool SelectItemFromPoint(const CPoint &point) { return false; };
   virtual int GetCursorFromPoint(const CPoint &point, CPoint *itemPoint = NULL) const { return -1; };
   virtual void Reset();
-  virtual unsigned int GetNumItems() const { return m_items.size(); };
+  virtual size_t GetNumItems() const { return m_items.size(); };
   virtual int GetCurrentPage() const;
   bool InsideLayout(const CGUIListItemLayout *layout, const CPoint &point) const;
-  virtual void OnFocus();
-  void UpdateStaticItems(bool refreshItems = false);
+  void OnFocus() override;
+  void OnUnFocus() override;
+  void UpdateListProvider(bool forceRefresh = false);
 
   int ScrollCorrectionRange() const;
   inline float Size() const;
-  void MoveToRow(int row);
   void FreeMemory(int keepStart, int keepEnd);
   void GetCurrentLayouts();
   CGUIListItemLayout *GetFocusedLayout() const;
 
   CPoint m_renderOffset; ///< \brief render offset of the first item in the list \sa SetRenderOffset
-    
+
   float m_analogScrollCount;
   unsigned int m_lastHoldTime;
 
@@ -138,11 +144,13 @@ protected:
 
   int m_pageControl;
 
-  std::vector<CGUIListItemLayout> m_layouts;
-  std::vector<CGUIListItemLayout> m_focusedLayouts;
+  std::list<CGUIListItemLayout> m_layouts;
+  std::list<CGUIListItemLayout> m_focusedLayouts;
 
   CGUIListItemLayout *m_layout;
   CGUIListItemLayout *m_focusedLayout;
+  bool m_layoutCondition = false;
+  bool m_focusedLayoutCondition = false;
 
   void ScrollToOffset(int offset);
   void SetContainerMoving(int direction);
@@ -150,26 +158,23 @@ protected:
 
   CScroller m_scroller;
 
-  bool m_staticContent;
-  bool m_staticDefaultAlways;
-  int  m_staticDefaultItem;
-  unsigned int m_staticUpdateTime;
-  std::vector<CGUIListItemPtr> m_staticItems;
+  IListProvider *m_listProvider;
+
   bool m_wasReset;  // true if we've received a Reset message until we've rendered once.  Allows
                     // us to make sure we don't tell the infomanager that we've been moving when
                     // the "movement" was simply due to the list being repopulated (thus cursor position
                     // changing around)
 
   void UpdateScrollByLetter();
-  void GetCacheOffsets(int &cacheBefore, int &cacheAfter);
+  void GetCacheOffsets(int &cacheBefore, int &cacheAfter) const;
   int GetCacheCount() const { return m_cacheItems; };
   bool ScrollingDown() const { return m_scroller.IsScrollingDown(); };
   bool ScrollingUp() const { return m_scroller.IsScrollingUp(); };
   void OnNextLetter();
   void OnPrevLetter();
-  void OnJumpLetter(char letter, bool skip = false);
+  void OnJumpLetter(std::string letter, bool skip = false);
   void OnJumpSMS(int letter);
-  std::vector< std::pair<int, CStdString> > m_letterOffsets;
+  std::vector< std::pair<int, std::string> > m_letterOffsets;
 
   /*! \brief Set the cursor position
    Should be used by all base classes rather than directly setting it, as
@@ -194,7 +199,17 @@ protected:
   */
   inline int GetItemOffset() const { return CorrectOffset(GetOffset(), 0); }
 
+  // autoscrolling
+  INFO::InfoPtr m_autoScrollCondition;
+  int           m_autoScrollMoveTime;   // time between to moves
+  unsigned int  m_autoScrollDelayTime;  // current offset into the delay
+  bool          m_autoScrollIsReversed; // scroll backwards
+
+  unsigned int m_lastRenderTime;
+
 private:
+  bool OnContextMenu();
+
   int m_cursor;
   int m_offset;
   int m_cacheItems;
@@ -202,12 +217,19 @@ private:
   CStopWatch m_lastScrollStartTimer;
   CStopWatch m_pageChangeTimer;
 
+  CGUIAction m_clickActions;
+  CGUIAction m_focusActions;
+  CGUIAction m_unfocusActions;
+
   // letter match searching
   CStopWatch m_matchTimer;
-  CStdString m_match;
+  std::string m_match;
   float m_scrollItemsPerFrame;
-
   static const int letter_match_timeout = 1000;
+
+  // early inertial scroll cancellation
+  bool m_waitForScrollEnd = false;
+  float m_lastScrollValue = 0.0f;
 };
 
 

@@ -1,41 +1,30 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "ModuleXbmcvfs.h"
+
 #include "LanguageHook.h"
-#include "filesystem/File.h"
+#include "URL.h"
+#include "Util.h"
 #include "filesystem/Directory.h"
+#include "filesystem/File.h"
 #include "utils/FileUtils.h"
 #include "utils/URIUtils.h"
-#include "Util.h"
 
 namespace XBMCAddon
 {
 
   namespace xbmcvfs
   {
-    bool copy(const String& strSource, const String& strDestnation)
+    bool copy(const String& strSource, const String& strDestination)
     {
       DelayedCallGuard dg;
-      return XFILE::CFile::Cache(strSource, strDestnation);
+      return XFILE::CFile::Copy(strSource, strDestination);
     }
 
     // delete a file
@@ -50,23 +39,37 @@ namespace XBMCAddon
     {
       DelayedCallGuard dg;
       return XFILE::CFile::Rename(file,newFile);
-    }  
+    }
 
-    // check for a file or folder existance, mimics Pythons os.path.exists()
+    // check for a file or folder existence, mimics Pythons os.path.exists()
     bool exists(const String& path)
     {
       DelayedCallGuard dg;
       if (URIUtils::HasSlashAtEnd(path, true))
-        return XFILE::CDirectory::Exists(path);
+        return XFILE::CDirectory::Exists(path, false);
       return XFILE::CFile::Exists(path, false);
-    }      
+    }
+
+    // make legal file name
+    String makeLegalFilename(const String& filename)
+    {
+      XBMC_TRACE;
+      return CUtil::MakeLegalPath(filename);
+    }
+
+    // validate path
+    String validatePath(const String& path)
+    {
+      XBMC_TRACE;
+      return CUtil::ValidatePath(path, true);
+    }
 
     // make a directory
     bool mkdir(const String& path)
     {
       DelayedCallGuard dg;
       return XFILE::CDirectory::Create(path);
-    }      
+    }
 
     // make all directories along the path
     bool mkdirs(const String& path)
@@ -78,13 +81,18 @@ namespace XBMCAddon
     bool rmdir(const String& path, bool force)
     {
       DelayedCallGuard dg;
-      return (force ? CFileUtils::DeleteItem(path,force) : XFILE::CDirectory::Remove(path));
-    }      
+
+      if (force)
+        return CFileUtils::DeleteItem(path);
+      else
+        return XFILE::CDirectory::Remove(path);
+    }
 
     Tuple<std::vector<String>, std::vector<String> > listdir(const String& path)
     {
+      DelayedCallGuard dg;
       CFileItemList items;
-      CStdString strSource;
+      std::string strSource;
       strSource = path;
       XFILE::CDirectory::GetDirectory(strSource, items, "", XFILE::DIR_FLAG_NO_FILE_DIRS);
 
@@ -94,17 +102,22 @@ namespace XBMCAddon
 
       for (int i=0; i < items.Size(); i++)
       {
-        CStdString itemPath = items[i]->GetPath();
-        
+        std::string itemPath = items[i]->GetPath();
+
         if (URIUtils::HasSlashAtEnd(itemPath)) // folder
         {
           URIUtils::RemoveSlashAtEnd(itemPath);
-          CStdString strFileName = URIUtils::GetFileName(itemPath);
+          std::string strFileName = URIUtils::GetFileName(itemPath);
+          if (strFileName.empty())
+          {
+            CURL url(itemPath);
+            strFileName = url.GetHostName();
+          }
           ret.first().push_back(strFileName);
         }
         else // file
         {
-          CStdString strFileName = URIUtils::GetFileName(itemPath);
+          std::string strFileName = URIUtils::GetFileName(itemPath);
           ret.second().push_back(strFileName);
         }
       }

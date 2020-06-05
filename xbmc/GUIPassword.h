@@ -1,56 +1,49 @@
-#pragma once
-
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2020 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
-#include <map>
-#include <vector>
+#pragma once
 
-#include "settings/ISettingCallback.h"
-#include "utils/StdString.h"
+#include "LockType.h"
+#include "settings/lib/ISettingCallback.h"
+#include "settings/lib/SettingLevel.h"
+
+#include <string>
+#include <vector>
 
 class CFileItem;
 class CMediaSource;
 
 typedef std::vector<CMediaSource> VECSOURCES;
 
-typedef enum
-{
-  LOCK_MODE_UNKNOWN            = -1,
-  LOCK_MODE_EVERYONE           =  0,
-  LOCK_MODE_NUMERIC            =  1,
-  LOCK_MODE_GAMEPAD            =  2,
-  LOCK_MODE_QWERTY             =  3,
-  LOCK_MODE_SAMBA              =  4,
-  LOCK_MODE_EEPROM_PARENTAL    =  5
-} LockType;
-
 class CGUIPassword : public ISettingCallback
 {
 public:
   CGUIPassword(void);
-  virtual ~CGUIPassword(void);
-  bool IsItemUnlocked(CFileItem* pItem, const CStdString &strType);
-  bool IsItemUnlocked(CMediaSource* pItem, const CStdString &strType);
-  bool CheckLock(LockType btnType, const CStdString& strPassword, int iHeading);
-  bool CheckLock(LockType btnType, const CStdString& strPassword, int iHeading, bool& bCanceled);
+  ~CGUIPassword(void) override;
+  template<typename T>
+  bool IsItemUnlocked(T pItem,
+                      const std::string& strType,
+                      const std::string& strLabel,
+                      const std::string& strHeading);
+  /*! \brief Tests if the user is allowed to access the share folder
+   \param pItem The share folder item to access
+   \param strType The type of share being accessed, e.g. "music", "video", etc. See CSettings::UpdateSources()
+   \return If access is granted, returns \e true
+   */
+  bool IsItemUnlocked(CFileItem* pItem, const std::string &strType);
+  /*! \brief Tests if the user is allowed to access the Mediasource
+   \param pItem The share folder item to access
+   \param strType The type of share being accessed, e.g. "music", "video", etc. See CSettings::UpdateSources()
+   \return If access is granted, returns \e true
+   */
+  bool IsItemUnlocked(CMediaSource* pItem, const std::string &strType);
+  bool CheckLock(LockType btnType, const std::string& strPassword, int iHeading);
+  bool CheckLock(LockType btnType, const std::string& strPassword, int iHeading, bool& bCanceled);
   bool IsProfileLockUnlocked(int iProfile=-1);
   bool IsProfileLockUnlocked(int iProfile, bool& bCanceled, bool prompt = true);
   bool IsMasterLockUnlocked(bool bPromptUser);
@@ -58,20 +51,34 @@ public:
 
   void UpdateMasterLockRetryCount(bool bResetCount);
   bool CheckStartUpLock();
+  /*! \brief Checks if the current profile is allowed to access the given settings level
+   \param level - The level to check
+   \param enforce - If false, CheckSettingLevelLock is allowed to lower the current settings level
+                    to a level we're allowed to access
+   \returns true if we're allowed to access the settings
+   */
+  bool CheckSettingLevelLock(const SettingLevel& level, bool enforce = false);
   bool CheckMenuLock(int iWindowID);
   bool SetMasterLockMode(bool bDetails=true);
-  bool LockSource(const CStdString& strType, const CStdString& strName, bool bState);
+  bool LockSource(const std::string& strType, const std::string& strName, bool bState);
   void LockSources(bool lock);
   void RemoveSourceLocks();
-  bool IsDatabasePathUnlocked(const CStdString& strPath, VECSOURCES& vecSources);
+  bool IsDatabasePathUnlocked(const std::string& strPath, VECSOURCES& vecSources);
+  /*! \brief Tests if the user is allowed to access the path by looking up the matching Mediasource
+   \param strPath The folder path to access
+   \param strType The type of share being accessed, e.g. "music", "video", etc. See CSettings::UpdateSources()
+   \return If access is granted, returns \e true
+   */
+  bool IsMediaPathUnlocked(const std::string& strPath, const std::string& strType);
 
-  virtual void OnSettingAction(const CSetting *setting);
+  void OnSettingAction(std::shared_ptr<const CSetting> setting) override;
 
   bool bMasterUser;
   int iMasterLockRetriesLeft;
+  std::string strMediasourcePath;
 
 private:
-  int VerifyPassword(LockType btnType, const CStdString& strPassword, const CStdString& strHeading);
+  int VerifyPassword(LockType btnType, const std::string& strPassword, const std::string& strHeading);
 };
 
 extern CGUIPassword g_passwordManager;

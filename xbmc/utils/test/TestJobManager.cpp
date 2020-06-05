@@ -1,92 +1,215 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
+#include "test/MtTestUtils.h"
+#include "utils/Job.h"
 #include "utils/JobManager.h"
-#include "settings/Settings.h"
-#include "utils/SystemInfo.h"
+#include "utils/XTimeUtils.h"
 
-#include "gtest/gtest.h"
+#include <atomic>
 
-/* CSysInfoJob::GetInternetState() will test for network connectivity. */
+#include <gtest/gtest.h>
+
+using namespace ConditionPoll;
+
+struct Flags
+{
+  std::atomic<bool> lingerAtWork{true};
+  std::atomic<bool> started{false};
+  std::atomic<bool> finished{false};
+  std::atomic<bool> wasCanceled{false};
+};
+
+class DummyJob : public CJob
+{
+  Flags* m_flags;
+public:
+  inline DummyJob(Flags* flags) : m_flags(flags)
+  {
+  }
+
+  bool DoWork() override
+  {
+    m_flags->started = true;
+    while (m_flags->lingerAtWork)
+      std::this_thread::yield();
+
+    if (ShouldCancel(0,0))
+      m_flags->wasCanceled = true;
+
+    m_flags->finished = true;
+    return true;
+  }
+};
+
+class ReallyDumbJob : public CJob
+{
+  Flags* m_flags;
+public:
+  inline ReallyDumbJob(Flags* flags) : m_flags(flags) {}
+
+  bool DoWork() override
+  {
+    m_flags->finished = true;
+    return true;
+  }
+};
+
 class TestJobManager : public testing::Test
 {
 protected:
-  TestJobManager()
-  {
-    /* TODO
-    CSettingsCategory* net = CSettings::Get().AddCategory(4, "network", 798);
-    CSettings::Get().AddBool(net, "network.usehttpproxy", 708, false);
-    CSettings::Get().AddString(net, "network.httpproxyserver", 706, "",
-                            EDIT_CONTROL_INPUT);
-    CSettings::Get().AddString(net, "network.httpproxyport", 730, "8080",
-                            EDIT_CONTROL_NUMBER_INPUT, false, 707);
-    CSettings::Get().AddString(net, "network.httpproxyusername", 1048, "",
-                            EDIT_CONTROL_INPUT);
-    CSettings::Get().AddString(net, "network.httpproxypassword", 733, "",
-                            EDIT_CONTROL_HIDDEN_INPUT,true,733);
-    CSettings::Get().AddInt(net, "network.bandwidth", 14041, 0, 0, 512, 100*1024,
-                         SPIN_CONTROL_INT_PLUS, 14048, 351);
-    */
-  }
+  TestJobManager() = default;
 
-  ~TestJobManager()
+  ~TestJobManager() override
   {
-    CSettings::Get().Unload();
+    /* Always cancel jobs test completion */
+    CJobManager::GetInstance().CancelJobs();
+    CJobManager::GetInstance().Restart();
   }
 };
 
 TEST_F(TestJobManager, AddJob)
 {
-  CJob* job = new CSysInfoJob();
+  Flags* flags = new Flags();
+  ReallyDumbJob* job = new ReallyDumbJob(flags);
   CJobManager::GetInstance().AddJob(job, NULL);
-  CJobManager::GetInstance().CancelJobs();
+  ASSERT_TRUE(poll([flags]() -> bool { return flags->finished; }));
+  delete flags;
 }
 
 TEST_F(TestJobManager, CancelJob)
 {
   unsigned int id;
-  CJob* job = new CSysInfoJob();
+  Flags* flags = new Flags();
+  DummyJob* job = new DummyJob(flags);
   id = CJobManager::GetInstance().AddJob(job, NULL);
+
+  // wait for the worker thread to be entered
+  ASSERT_TRUE(poll([flags]() -> bool { return flags->started; }));
+
+  // cancel the job
   CJobManager::GetInstance().CancelJob(id);
+
+  // let the worker thread continue
+  flags->lingerAtWork = false;
+
+  // make sure the job finished.
+  ASSERT_TRUE(poll([flags]() -> bool { return flags->finished; }));
+
+  // ... and that it was canceled.
+  EXPECT_TRUE(flags->wasCanceled);
+  delete flags;
 }
 
-TEST_F(TestJobManager, Pause)
+namespace
 {
-  CJob* job = new CSysInfoJob();
-  CJobManager::GetInstance().AddJob(job, NULL, CJob::PRIORITY_NORMAL);
+struct JobControlPackage
+{
+  JobControlPackage()
+  {
+    // We're not ready to wait yet
+    jobCreatedMutex.lock();
+  }
 
-  EXPECT_FALSE(CJobManager::GetInstance().IsPaused(CJob::PRIORITY_NORMAL));
-  CJobManager::GetInstance().Pause(CJob::PRIORITY_NORMAL);
-  EXPECT_TRUE(CJobManager::GetInstance().IsPaused(CJob::PRIORITY_NORMAL));
-  CJobManager::GetInstance().UnPause(CJob::PRIORITY_NORMAL);
-  EXPECT_FALSE(CJobManager::GetInstance().IsPaused(CJob::PRIORITY_NORMAL));
+  ~JobControlPackage()
+  {
+    jobCreatedMutex.unlock();
+  }
 
-  CJobManager::GetInstance().CancelJobs();
+  bool ready = false;
+  XbmcThreads::ConditionVariable jobCreatedCond;
+  CCriticalSection jobCreatedMutex;
+};
+
+class BroadcastingJob :
+  public CJob
+{
+public:
+
+  BroadcastingJob(JobControlPackage &package) :
+    m_package(package),
+    m_finish(false)
+  {
+  }
+
+  void FinishAndStopBlocking()
+  {
+    CSingleLock lock(m_blockMutex);
+
+    m_finish = true;
+    m_block.notifyAll();
+  }
+
+  const char * GetType() const override
+  {
+    return "BroadcastingJob";
+  }
+
+  bool DoWork() override
+  {
+    {
+      CSingleLock lock(m_package.jobCreatedMutex);
+
+      m_package.ready = true;
+      m_package.jobCreatedCond.notifyAll();
+    }
+
+    CSingleLock blockLock(m_blockMutex);
+
+    // Block until we're told to go away
+    while (!m_finish)
+      m_block.wait(m_blockMutex);
+    return true;
+  }
+
+private:
+
+  JobControlPackage &m_package;
+
+  XbmcThreads::ConditionVariable m_block;
+  CCriticalSection m_blockMutex;
+  bool m_finish;
+};
+
+BroadcastingJob *
+WaitForJobToStartProcessing(CJob::PRIORITY priority, JobControlPackage &package)
+{
+  BroadcastingJob* job = new BroadcastingJob(package);
+  CJobManager::GetInstance().AddJob(job, NULL, priority);
+
+  // We're now ready to wait, wait and then unblock once ready
+  while (!package.ready)
+    package.jobCreatedCond.wait(package.jobCreatedMutex);
+
+  return job;
+}
+}
+
+TEST_F(TestJobManager, PauseLowPriorityJob)
+{
+  JobControlPackage package;
+  BroadcastingJob *job (WaitForJobToStartProcessing(CJob::PRIORITY_LOW_PAUSABLE, package));
+
+  EXPECT_TRUE(CJobManager::GetInstance().IsProcessing(CJob::PRIORITY_LOW_PAUSABLE));
+  CJobManager::GetInstance().PauseJobs();
+  EXPECT_FALSE(CJobManager::GetInstance().IsProcessing(CJob::PRIORITY_LOW_PAUSABLE));
+  CJobManager::GetInstance().UnPauseJobs();
+  EXPECT_TRUE(CJobManager::GetInstance().IsProcessing(CJob::PRIORITY_LOW_PAUSABLE));
+
+  job->FinishAndStopBlocking();
 }
 
 TEST_F(TestJobManager, IsProcessing)
 {
-  CJob* job = new CSysInfoJob();
-  CJobManager::GetInstance().AddJob(job, NULL);
+  JobControlPackage package;
+  BroadcastingJob *job (WaitForJobToStartProcessing(CJob::PRIORITY_LOW_PAUSABLE, package));
 
   EXPECT_EQ(0, CJobManager::GetInstance().IsProcessing(""));
 
-  CJobManager::GetInstance().CancelJobs();
+  job->FinishAndStopBlocking();
 }

@@ -1,45 +1,33 @@
 /*
- *      Copyright (C) 2012-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2016-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "VideoDbUrl.h"
+
 #include "filesystem/VideoDatabaseDirectory.h"
 #include "playlists/SmartPlayList.h"
 #include "utils/StringUtils.h"
 #include "utils/Variant.h"
 
-using namespace std;
 using namespace XFILE;
 
 CVideoDbUrl::CVideoDbUrl()
   : CDbUrl()
 { }
 
-CVideoDbUrl::~CVideoDbUrl()
-{ }
+CVideoDbUrl::~CVideoDbUrl() = default;
 
 bool CVideoDbUrl::parse()
 {
   // the URL must start with videodb://
-  if (m_url.GetProtocol() != "videodb" || m_url.GetFileName().empty())
+  if (!m_url.IsProtocol("videodb") || m_url.GetFileName().empty())
     return false;
 
-  CStdString path = m_url.Get();
+  std::string path = m_url.Get();
   VIDEODATABASEDIRECTORY::NODE_TYPE dirType = CVideoDatabaseDirectory::GetDirectoryType(path);
   VIDEODATABASEDIRECTORY::NODE_TYPE childType = CVideoDatabaseDirectory::GetDirectoryChildType(path);
 
@@ -57,6 +45,7 @@ bool CVideoDbUrl::parse()
     case VIDEODATABASEDIRECTORY::NODE_TYPE_SEASONS:
     case VIDEODATABASEDIRECTORY::NODE_TYPE_EPISODES:
     case VIDEODATABASEDIRECTORY::NODE_TYPE_RECENTLY_ADDED_EPISODES:
+    case VIDEODATABASEDIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS:
       m_type = "tvshows";
       break;
 
@@ -82,6 +71,7 @@ bool CVideoDbUrl::parse()
 
     case VIDEODATABASEDIRECTORY::NODE_TYPE_TVSHOWS_OVERVIEW:
     case VIDEODATABASEDIRECTORY::NODE_TYPE_TITLE_TVSHOWS:
+    case VIDEODATABASEDIRECTORY::NODE_TYPE_INPROGRESS_TVSHOWS:
       m_type = "tvshows";
       m_itemType = "tvshows";
       break;
@@ -160,7 +150,13 @@ bool CVideoDbUrl::parse()
 
   // add options based on the QueryParams
   if (queryParams.GetActorId() != -1)
-    AddOption("actorid", (int)queryParams.GetActorId());
+  {
+    std::string optionName = "actorid";
+    if (m_type == "musicvideos")
+      optionName = "artistid";
+
+    AddOption(optionName, (int)queryParams.GetActorId());
+  }
   if (queryParams.GetAlbumId() != -1)
     AddOption("albumid", (int)queryParams.GetAlbumId());
   if (queryParams.GetCountryId() != -1)
@@ -205,7 +201,7 @@ bool CVideoDbUrl::validateOption(const std::string &key, const CVariant &value)
   CSmartPlaylist xspFilter;
   if (!xspFilter.LoadFromJson(value.asString()))
     return false;
-  
+
   // check if the filter playlist matches the item type
   return (xspFilter.GetType() == m_itemType ||
          (xspFilter.GetType() == "movies" && m_itemType == "sets"));

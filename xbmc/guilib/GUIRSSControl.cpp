@@ -1,60 +1,58 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "GUIRSSControl.h"
-#include "GUIWindowManager.h"
+
+#include "ServiceBroker.h"
 #include "settings/Settings.h"
-#include "threads/CriticalSection.h"
+#include "settings/SettingsComponent.h"
 #include "threads/SingleLock.h"
+#include "utils/Color.h"
 #include "utils/RssManager.h"
 #include "utils/RssReader.h"
 #include "utils/StringUtils.h"
 
-using namespace std;
+using namespace KODI::GUILIB;
 
-CGUIRSSControl::CGUIRSSControl(int parentID, int controlID, float posX, float posY, float width, float height, const CLabelInfo& labelInfo, const CGUIInfoColor &channelColor, const CGUIInfoColor &headlineColor, CStdString& strRSSTags)
+CGUIRSSControl::CGUIRSSControl(int parentID, int controlID, float posX, float posY, float width, float height,
+                               const CLabelInfo& labelInfo, const GUIINFO::CGUIInfoColor &channelColor,
+                               const GUIINFO::CGUIInfoColor &headlineColor, std::string& strRSSTags)
 : CGUIControl(parentID, controlID, posX, posY, width, height),
-  m_scrollInfo(0,0,labelInfo.scrollSpeed,"")
+  m_strRSSTags(strRSSTags),
+  m_label(labelInfo),
+  m_channelColor(channelColor),
+  m_headlineColor(headlineColor),
+  m_scrollInfo(0,0,labelInfo.scrollSpeed,""),
+  m_dirty(true)
 {
-  m_label = labelInfo;
-  m_headlineColor = headlineColor;
-  m_channelColor = channelColor;
-
-  m_strRSSTags = strRSSTags;
-
   m_pReader = NULL;
   m_rtl = false;
   m_stopped = false;
+  m_urlset = 1;
   ControlType = GUICONTROL_RSS;
 }
 
 CGUIRSSControl::CGUIRSSControl(const CGUIRSSControl &from)
-: CGUIControl(from),m_scrollInfo(from.m_scrollInfo)
+  : CGUIControl(from),
+  m_feed(),
+  m_strRSSTags(from.m_strRSSTags),
+  m_label(from.m_label),
+  m_channelColor(from.m_channelColor),
+  m_headlineColor(from.m_headlineColor),
+  m_vecUrls(),
+  m_vecIntervals(),
+  m_scrollInfo(from.m_scrollInfo),
+  m_dirty(true)
 {
-  m_label = from.m_label;
-  m_headlineColor = from.m_headlineColor;
-  m_channelColor = from.m_channelColor;
-  m_strRSSTags = from.m_strRSSTags;
   m_pReader = NULL;
   m_rtl = from.m_rtl;
   m_stopped = from.m_stopped;
+  m_urlset = 1;
   ControlType = GUICONTROL_RSS;
 }
 
@@ -64,16 +62,6 @@ CGUIRSSControl::~CGUIRSSControl(void)
   if (m_pReader)
     m_pReader->SetObserver(NULL);
   m_pReader = NULL;
-}
-
-void CGUIRSSControl::SetUrls(const vector<string> &vecUrl, bool rtl)
-{
-  m_vecUrls = vecUrl;
-  m_rtl = rtl;
-  if (m_scrollInfo.pixelSpeed > 0 && rtl)
-    m_scrollInfo.pixelSpeed *= -1;
-  else if (m_scrollInfo.pixelSpeed < 0 && !rtl)
-    m_scrollInfo.pixelSpeed *= -1;
 }
 
 void CGUIRSSControl::OnFocus()
@@ -86,9 +74,9 @@ void CGUIRSSControl::OnUnFocus()
   m_stopped = false;
 }
 
-void CGUIRSSControl::SetIntervals(const vector<int>& vecIntervals)
+void CGUIRSSControl::SetUrlSet(const int urlset)
 {
-  m_vecIntervals = vecIntervals;
+  m_urlset = urlset;
 }
 
 bool CGUIRSSControl::UpdateColors()
@@ -97,39 +85,41 @@ bool CGUIRSSControl::UpdateColors()
   changed |= m_label.UpdateColors();
   changed |= m_headlineColor.Update();
   changed |= m_channelColor.Update();
-
   return changed;
 }
 
 void CGUIRSSControl::Process(unsigned int currentTime, CDirtyRegionList &dirtyregions)
 {
-  // TODO Proper processing which marks when its actually changed. Just mark always for now.
-  MarkDirtyRegion();
-
-  CGUIControl::Process(currentTime, dirtyregions);
-}
-
-void CGUIRSSControl::Render()
-{
-  // only render the control if they are enabled
-  if (CSettings::Get().GetBool("lookandfeel.enablerssfeeds") && CRssManager::Get().IsActive())
+  bool dirty = false;
+  if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_LOOKANDFEEL_ENABLERSSFEEDS) && CRssManager::GetInstance().IsActive())
   {
     CSingleLock lock(m_criticalSection);
     // Create RSS background/worker thread if needed
     if (m_pReader == NULL)
     {
-      if (CRssManager::Get().GetReader(GetID(), GetParentID(), this, m_pReader))
-        m_scrollInfo.characterPos = m_pReader->m_SavedScrollPos;
+
+      RssUrls::const_iterator iter = CRssManager::GetInstance().GetUrls().find(m_urlset);
+      if (iter != CRssManager::GetInstance().GetUrls().end())
+      {
+        m_rtl = iter->second.rtl;
+        m_vecUrls = iter->second.url;
+        m_vecIntervals = iter->second.interval;
+        m_scrollInfo.SetSpeed(m_label.scrollSpeed * (m_rtl ? -1 : 1));
+      }
+
+      dirty = true;
+
+      if (CRssManager::GetInstance().GetReader(GetID(), GetParentID(), this, m_pReader))
+      {
+        m_scrollInfo.pixelPos = m_pReader->m_savedScrollPixelPos;
+      }
       else
       {
         if (m_strRSSTags != "")
         {
-          CStdStringArray vecSplitTags;
-
-          StringUtils::SplitString(m_strRSSTags, ",", vecSplitTags);
-
-          for (unsigned int i = 0;i < vecSplitTags.size();i++)
-            m_pReader->AddTag(vecSplitTags[i]);
+          std::vector<std::string> tags = StringUtils::Split(m_strRSSTags, ",");
+          for (const std::string& i : tags)
+            m_pReader->AddTag(i);
         }
         // use half the width of the control as spacing between feeds, and double this between feed sets
         float spaceWidth = (m_label.font) ? m_label.font->GetCharWidth(L' ') : 15;
@@ -137,25 +127,47 @@ void CGUIRSSControl::Render()
       }
     }
 
+    if(m_dirty)
+      dirty = true;
+    m_dirty = false;
+
     if (m_label.font)
     {
-      vecColors colors;
-      colors.push_back(m_label.textColor);
-      colors.push_back(m_headlineColor);
-      colors.push_back(m_channelColor);
-
       if ( m_stopped )
         m_scrollInfo.SetSpeed(0);
       else
-        m_scrollInfo.SetSpeed(m_label.scrollSpeed);
+        m_scrollInfo.SetSpeed(m_label.scrollSpeed * (m_rtl ? -1 : 1));
 
+      if(m_label.font->UpdateScrollInfo(m_feed, m_scrollInfo))
+        dirty = true;
+    }
+  }
+
+  if(dirty)
+    MarkDirtyRegion();
+
+  CGUIControl::Process(currentTime, dirtyregions);
+}
+
+void CGUIRSSControl::Render()
+{
+  // only render the control if they are enabled
+  if (CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_LOOKANDFEEL_ENABLERSSFEEDS) && CRssManager::GetInstance().IsActive())
+  {
+
+    if (m_label.font)
+    {
+      std::vector<UTILS::Color> colors;
+      colors.push_back(m_label.textColor);
+      colors.push_back(m_headlineColor);
+      colors.push_back(m_channelColor);
       m_label.font->DrawScrollingText(m_posX, m_posY, colors, m_label.shadowColor, m_feed, 0, m_width, m_scrollInfo);
     }
 
     if (m_pReader)
     {
       m_pReader->CheckForUpdates();
-      m_pReader->m_SavedScrollPos = m_scrollInfo.characterPos;
+      m_pReader->m_savedScrollPixelPos = m_scrollInfo.pixelPos;
     }
   }
   CGUIControl::Render();
@@ -172,6 +184,7 @@ void CGUIRSSControl::OnFeedUpdate(const vecText &feed)
 {
   CSingleLock lock(m_criticalSection);
   m_feed = feed;
+  m_dirty = true;
 }
 
 void CGUIRSSControl::OnFeedRelease()

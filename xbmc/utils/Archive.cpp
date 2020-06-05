@@ -1,47 +1,56 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "Archive.h"
+
+#include "IArchivable.h"
 #include "filesystem/File.h"
-#include "Variant.h"
+#include "utils/Variant.h"
+#include "utils/log.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <stdexcept>
+
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wlong-long"
+#endif
 
 using namespace XFILE;
 
-#define BUFFER_MAX 4096
+//arbitrarily chosen, should be plenty big enough for our strings
+//without causing random bad things happening
+//not very bad, just tiny bad
+#define MAX_STRING_SIZE 100*1024*1024
 
 CArchive::CArchive(CFile* pFile, int mode)
 {
   m_pFile = pFile;
   m_iMode = mode;
 
-  m_pBuffer = new BYTE[BUFFER_MAX];
-  memset(m_pBuffer, 0, BUFFER_MAX);
-
-  m_BufferPos = 0;
+  m_pBuffer = std::unique_ptr<uint8_t[]>(new uint8_t[CARCHIVE_BUFFER_MAX]);
+  memset(m_pBuffer.get(), 0, CARCHIVE_BUFFER_MAX);
+  if (mode == load)
+  {
+    m_BufferPos = m_pBuffer.get() + CARCHIVE_BUFFER_MAX;
+    m_BufferRemain = 0;
+  }
+  else
+  {
+    m_BufferPos = m_pBuffer.get();
+    m_BufferRemain = CARCHIVE_BUFFER_MAX;
+  }
 }
 
 CArchive::~CArchive()
 {
   FlushBuffer();
-  delete[] m_pBuffer;
-  m_BufferPos = 0;
 }
 
 void CArchive::Close()
@@ -49,194 +58,102 @@ void CArchive::Close()
   FlushBuffer();
 }
 
-bool CArchive::IsLoading()
+bool CArchive::IsLoading() const
 {
   return (m_iMode == load);
 }
 
-bool CArchive::IsStoring()
+bool CArchive::IsStoring() const
 {
   return (m_iMode == store);
 }
 
 CArchive& CArchive::operator<<(float f)
 {
-  int size = sizeof(float);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &f, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&f, sizeof(f));
 }
 
 CArchive& CArchive::operator<<(double d)
 {
-  int size = sizeof(double);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
+  return streamout(&d, sizeof(d));
+}
 
-  memcpy(&m_pBuffer[m_BufferPos], &d, size);
-  m_BufferPos += size;
+CArchive& CArchive::operator<<(short int s)
+{
+  return streamout(&s, sizeof(s));
+}
 
-  return *this;
+CArchive& CArchive::operator<<(unsigned short int us)
+{
+  return streamout(&us, sizeof(us));
 }
 
 CArchive& CArchive::operator<<(int i)
 {
-  int size = sizeof(int);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &i, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&i, sizeof(i));
 }
 
-CArchive& CArchive::operator<<(unsigned int i)
+CArchive& CArchive::operator<<(unsigned int ui)
 {
-  int size = sizeof(unsigned int);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &i, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&ui, sizeof(ui));
 }
 
-CArchive& CArchive::operator<<(int64_t i64)
+CArchive& CArchive::operator<<(long int l)
 {
-  int size = sizeof(int64_t);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &i64, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&l, sizeof(l));
 }
 
-CArchive& CArchive::operator<<(uint64_t ui64)
+CArchive& CArchive::operator<<(unsigned long int ul)
 {
-  int size = sizeof(uint64_t);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
+  return streamout(&ul, sizeof(ul));
+}
 
-  memcpy(&m_pBuffer[m_BufferPos], &ui64, size);
-  m_BufferPos += size;
+CArchive& CArchive::operator<<(long long int ll)
+{
+  return streamout(&ll, sizeof(ll));
+}
 
-  return *this;
+CArchive& CArchive::operator<<(unsigned long long int ull)
+{
+  return streamout(&ull, sizeof(ull));
 }
 
 CArchive& CArchive::operator<<(bool b)
 {
-  int size = sizeof(bool);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &b, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&b, sizeof(b));
 }
 
 CArchive& CArchive::operator<<(char c)
 {
-  int size = sizeof(char);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &c, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&c, sizeof(c));
 }
 
 CArchive& CArchive::operator<<(const std::string& str)
 {
-  *this << (int)str.size();
+  auto size = static_cast<uint32_t>(str.size());
+  if (size > MAX_STRING_SIZE)
+    throw std::out_of_range("String too large, over 100MB");
 
-  int size = str.size();
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
+  *this << size;
 
-  int iBufferMaxParts=size/BUFFER_MAX;
-  for (int i=0; i<iBufferMaxParts; i++)
-  {
-    memcpy(&m_pBuffer[m_BufferPos], str.c_str()+(i*BUFFER_MAX), BUFFER_MAX);
-    m_BufferPos+=BUFFER_MAX;
-    FlushBuffer();
-  }
-
-  int iPos=iBufferMaxParts*BUFFER_MAX;
-  int iSizeLeft=size-iPos;
-  memcpy(&m_pBuffer[m_BufferPos], str.c_str()+iPos, iSizeLeft);
-  m_BufferPos+=iSizeLeft;
-
-  return *this;
+  return streamout(str.data(), size * sizeof(char));
 }
 
-CArchive& CArchive::operator<<(const CStdString& str)
+CArchive& CArchive::operator<<(const std::wstring& wstr)
 {
-  *this << str.GetLength();
+  if (wstr.size() > MAX_STRING_SIZE)
+    throw std::out_of_range("String too large, over 100MB");
 
-  int size = str.GetLength();
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
+  auto size = static_cast<uint32_t>(wstr.size());
 
-  int iBufferMaxParts=size/BUFFER_MAX;
-  for (int i=0; i<iBufferMaxParts; i++)
-  {
-    memcpy(&m_pBuffer[m_BufferPos], str.c_str()+(i*BUFFER_MAX), BUFFER_MAX);
-    m_BufferPos+=BUFFER_MAX;
-    FlushBuffer();
-  }
+  *this << size;
 
-  int iPos=iBufferMaxParts*BUFFER_MAX;
-  int iSizeLeft=size-iPos;
-  memcpy(&m_pBuffer[m_BufferPos], str.c_str()+iPos, iSizeLeft);
-  m_BufferPos+=iSizeLeft;
-
-  return *this;
+  return streamout(wstr.data(), size * sizeof(wchar_t));
 }
 
-CArchive& CArchive::operator<<(const CStdStringW& str)
+CArchive& CArchive::operator<<(const KODI::TIME::SystemTime& time)
 {
-  *this << str.GetLength();
-
-  int size = str.GetLength() * sizeof(wchar_t);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  int iBufferMaxParts=size/BUFFER_MAX;
-  for (int i=0; i<iBufferMaxParts; ++i)
-  {
-    memcpy(&m_pBuffer[m_BufferPos], str.c_str()+(i*BUFFER_MAX), BUFFER_MAX);
-    m_BufferPos+=BUFFER_MAX;
-    FlushBuffer();
-  }
-
-  int iPos=iBufferMaxParts*BUFFER_MAX;
-  int iSizeLeft=size-iPos;
-  memcpy(&m_pBuffer[m_BufferPos], str.c_str()+iPos, iSizeLeft);
-  m_BufferPos+=iSizeLeft;
-
-  return *this;
-}
-
-CArchive& CArchive::operator<<(const SYSTEMTIME& time)
-{
-  int size = sizeof(SYSTEMTIME);
-  if (m_BufferPos + size >= BUFFER_MAX)
-    FlushBuffer();
-
-  memcpy(&m_pBuffer[m_BufferPos], &time, size);
-  m_BufferPos += size;
-
-  return *this;
+  return streamout(&time, sizeof(KODI::TIME::SystemTime));
 }
 
 CArchive& CArchive::operator<<(IArchivable& obj)
@@ -248,7 +165,7 @@ CArchive& CArchive::operator<<(IArchivable& obj)
 
 CArchive& CArchive::operator<<(const CVariant& variant)
 {
-  *this << (int)variant.type();
+  *this << static_cast<int>(variant.type());
   switch (variant.type())
   {
   case CVariant::VariantTypeInteger:
@@ -263,17 +180,20 @@ CArchive& CArchive::operator<<(const CVariant& variant)
   case CVariant::VariantTypeString:
     *this << variant.asString();
     break;
+  case CVariant::VariantTypeWideString:
+    *this << variant.asWideString();
+    break;
   case CVariant::VariantTypeDouble:
     *this << variant.asDouble();
     break;
   case CVariant::VariantTypeArray:
     *this << variant.size();
-    for (unsigned int index = 0; index < variant.size(); index++)
-      *this << variant[index];
+    for (auto i = variant.begin_array(); i != variant.end_array(); ++i)
+      *this << *i;
     break;
   case CVariant::VariantTypeObject:
     *this << variant.size();
-    for (CVariant::const_iterator_map itr = variant.begin_map(); itr != variant.end_map(); itr++)
+    for (auto itr = variant.begin_map(); itr != variant.end_map(); ++itr)
     {
       *this << itr->first;
       *this << itr->second;
@@ -290,120 +210,63 @@ CArchive& CArchive::operator<<(const CVariant& variant)
 
 CArchive& CArchive::operator<<(const std::vector<std::string>& strArray)
 {
-  *this << (unsigned int)strArray.size();
-  for (unsigned int index = 0; index < strArray.size(); index++)
-    *this << strArray.at(index);
+  if (std::numeric_limits<uint32_t>::max() < strArray.size())
+    throw std::out_of_range("Array too large, over 2^32 in size");
+
+  *this << static_cast<uint32_t>(strArray.size());
+
+  for (auto&& item : strArray)
+    *this << item;
 
   return *this;
 }
 
 CArchive& CArchive::operator<<(const std::vector<int>& iArray)
 {
-  *this << (unsigned int)iArray.size();
-  for (unsigned int index = 0; index < iArray.size(); index++)
-    *this << iArray.at(index);
+  if (std::numeric_limits<uint32_t>::max() < iArray.size())
+    throw std::out_of_range("Array too large, over 2^32 in size");
 
-  return *this;
-}
+  *this << static_cast<uint32_t>(iArray.size());
 
-CArchive& CArchive::operator>>(float& f)
-{
-  m_pFile->Read((void*)&f, sizeof(float));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(double& d)
-{
-  m_pFile->Read((void*)&d, sizeof(double));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(int& i)
-{
-  m_pFile->Read((void*)&i, sizeof(int));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(unsigned int& i)
-{
-  m_pFile->Read((void*)&i, sizeof(unsigned int));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(int64_t& i64)
-{
-  m_pFile->Read((void*)&i64, sizeof(int64_t));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(uint64_t& ui64)
-{
-  m_pFile->Read((void*)&ui64, sizeof(uint64_t));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(bool& b)
-{
-  m_pFile->Read((void*)&b, sizeof(bool));
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(char& c)
-{
-  m_pFile->Read((void*)&c, sizeof(char));
+  for (auto&& item : iArray)
+    *this << item;
 
   return *this;
 }
 
 CArchive& CArchive::operator>>(std::string& str)
 {
-  int iLength = 0;
+  uint32_t iLength = 0;
   *this >> iLength;
 
-  char *s = new char[iLength];
-  m_pFile->Read(s, iLength);
-  str.assign(s, iLength);
-  delete[] s;
+  if (iLength > MAX_STRING_SIZE)
+    throw std::out_of_range("String too large, over 100MB");
+
+  auto s = std::unique_ptr<char[]>(new char[iLength]);
+  streamin(s.get(), iLength * sizeof(char));
+  str.assign(s.get(), iLength);
 
   return *this;
 }
 
-CArchive& CArchive::operator>>(CStdString& str)
+CArchive& CArchive::operator>>(std::wstring& wstr)
 {
-  int iLength = 0;
+  uint32_t iLength = 0;
   *this >> iLength;
 
-  m_pFile->Read((void*)str.GetBufferSetLength(iLength), iLength);
-  str.ReleaseBuffer();
+  if (iLength > MAX_STRING_SIZE)
+    throw std::out_of_range("String too large, over 100MB");
 
+  auto p = std::unique_ptr<wchar_t[]>(new wchar_t[iLength]);
+  streamin(p.get(), iLength * sizeof(wchar_t));
+  wstr.assign(p.get(), iLength);
 
   return *this;
 }
 
-CArchive& CArchive::operator>>(CStdStringW& str)
+CArchive& CArchive::operator>>(KODI::TIME::SystemTime& time)
 {
-  int iLength = 0;
-  *this >> iLength;
-
-  m_pFile->Read((void*)str.GetBufferSetLength(iLength), iLength * sizeof(wchar_t));
-  str.ReleaseBuffer();
-
-
-  return *this;
-}
-
-CArchive& CArchive::operator>>(SYSTEMTIME& time)
-{
-  m_pFile->Read((void*)&time, sizeof(SYSTEMTIME));
-
-  return *this;
+  return streamin(&time, sizeof(KODI::TIME::SystemTime));
 }
 
 CArchive& CArchive::operator>>(IArchivable& obj)
@@ -417,7 +280,7 @@ CArchive& CArchive::operator>>(CVariant& variant)
 {
   int type;
   *this >> type;
-  variant = CVariant((CVariant::VariantType)type);
+  variant = CVariant(static_cast<CVariant::VariantType>(type));
 
   switch (variant.type())
   {
@@ -445,6 +308,13 @@ CArchive& CArchive::operator>>(CVariant& variant)
   case CVariant::VariantTypeString:
   {
     std::string value;
+    *this >> value;
+    variant = value;
+    break;
+  }
+  case CVariant::VariantTypeWideString:
+  {
+    std::wstring value;
     *this >> value;
     variant = value;
     break;
@@ -493,14 +363,14 @@ CArchive& CArchive::operator>>(CVariant& variant)
 
 CArchive& CArchive::operator>>(std::vector<std::string>& strArray)
 {
-  int size;
+  uint32_t size;
   *this >> size;
   strArray.clear();
-  for (int index = 0; index < size; index++)
+  for (uint32_t index = 0; index < size; index++)
   {
     std::string str;
     *this >> str;
-    strArray.push_back(str);
+    strArray.push_back(std::move(str));
   }
 
   return *this;
@@ -508,10 +378,10 @@ CArchive& CArchive::operator>>(std::vector<std::string>& strArray)
 
 CArchive& CArchive::operator>>(std::vector<int>& iArray)
 {
-  int size;
+  uint32_t size;
   *this >> size;
   iArray.clear();
-  for (int index = 0; index < size; index++)
+  for (uint32_t index = 0; index < size; index++)
   {
     int i;
     *this >> i;
@@ -523,9 +393,69 @@ CArchive& CArchive::operator>>(std::vector<int>& iArray)
 
 void CArchive::FlushBuffer()
 {
-  if (m_BufferPos > 0)
+  if (m_iMode == store && m_BufferPos != m_pBuffer.get())
   {
-    m_pFile->Write(m_pBuffer, m_BufferPos);
-    m_BufferPos = 0;
+    if (m_pFile->Write(m_pBuffer.get(), m_BufferPos - m_pBuffer.get()) != m_BufferPos - m_pBuffer.get())
+      CLog::Log(LOGERROR, "%s: Error flushing buffer", __FUNCTION__);
+    else
+    {
+      m_BufferPos = m_pBuffer.get();
+      m_BufferRemain = CARCHIVE_BUFFER_MAX;
+    }
   }
+}
+
+CArchive &CArchive::streamout_bufferwrap(const uint8_t *ptr, size_t size)
+{
+  do
+  {
+    auto chunkSize = std::min(size, m_BufferRemain);
+    m_BufferPos = std::copy(ptr, ptr + chunkSize, m_BufferPos);
+    ptr += chunkSize;
+    size -= chunkSize;
+    m_BufferRemain -= chunkSize;
+    if (m_BufferRemain == 0)
+      FlushBuffer();
+  } while (size > 0);
+  return *this;
+}
+
+void CArchive::FillBuffer()
+{
+  if (m_iMode == load && m_BufferRemain == 0)
+  {
+    auto read = m_pFile->Read(m_pBuffer.get(), CARCHIVE_BUFFER_MAX);
+    if (read > 0)
+    {
+      m_BufferRemain = read;
+      m_BufferPos = m_pBuffer.get();
+    }
+  }
+}
+
+CArchive &CArchive::streamin_bufferwrap(uint8_t *ptr, size_t size)
+{
+  auto orig_ptr = ptr;
+  auto orig_size = size;
+  do
+  {
+    if (m_BufferRemain == 0)
+    {
+      FillBuffer();
+      if (m_BufferRemain < CARCHIVE_BUFFER_MAX && m_BufferRemain < size)
+      {
+        CLog::Log(LOGERROR, "%s: can't stream in: requested %lu bytes, was read %lu bytes", __FUNCTION__,
+            static_cast<unsigned long>(orig_size), static_cast<unsigned long>(ptr - orig_ptr + m_BufferRemain));
+
+        memset(orig_ptr, 0, orig_size);
+        return *this;
+      }
+    }
+    auto chunkSize = std::min(size, m_BufferRemain);
+    ptr = std::copy(m_BufferPos, m_BufferPos + chunkSize, ptr);
+    m_BufferPos += chunkSize;
+    m_BufferRemain -= chunkSize;
+    size -= chunkSize;
+  } while (size > 0);
+  return *this;
 }

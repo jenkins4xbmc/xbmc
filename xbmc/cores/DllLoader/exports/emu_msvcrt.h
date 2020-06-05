@@ -1,62 +1,44 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
+#pragma once
 
-#ifndef _EMU_MSVCRT_H_
-#define _EMU_MSVCRT_H_
+#include <stdint.h>
+#include <stdio.h>
+
+#include "PlatformDefs.h"
 
 #ifdef TARGET_POSIX
 #define _onexit_t void*
 #endif
 
-#if defined(TARGET_DARWIN) || defined(TARGET_FREEBSD)
+#if defined(TARGET_DARWIN) || defined(TARGET_FREEBSD) || defined(TARGET_ANDROID)
 typedef off_t __off_t;
 typedef int64_t off64_t;
 typedef off64_t __off64_t;
 typedef fpos_t fpos64_t;
 #endif
-#if defined(TARGET_ANDROID)
-typedef long int __off_t;
-typedef long int __off64_t;
-typedef fpos_t   fpos64_t; // no 64-bit on android
-#endif
 
 #ifdef TARGET_WINDOWS
-#include "win32/dirent.h"
+#include "platform/win32/dirent.h"
 #else
 #include <dirent.h>
 #endif
 
 typedef void ( *PFV)(void);
 
-#define __IS_STDIN_STREAM(stream)   (stream == stdin  || stream->_file == stdin->_file || stream->_file == 0)
-#define __IS_STDOUT_STREAM(stream)  (stream == stdout || stream->_file == stdout->_file || stream->_file == 1)
-#define __IS_STDERR_STREAM(stream)  (stream == stderr || stream->_file == stderr->_file || stream->_file == 2)
+#define __IS_STDIN_STREAM(stream)  (stream == stdin || fileno(stream) == fileno(stdin) || fileno(stream) == 0)
+#define __IS_STDOUT_STREAM(stream) (stream == stdout || fileno(stream) == fileno(stdout) || fileno(stream) == 1)
+#define __IS_STDERR_STREAM(stream) (stream == stderr || fileno(stream) == fileno(stderr) || fileno(stream) == 2)
 #define IS_STDIN_STREAM(stream)     (stream != NULL && __IS_STDIN_STREAM(stream))
 #define IS_STDOUT_STREAM(stream)    (stream != NULL && __IS_STDOUT_STREAM(stream))
 #define IS_STDERR_STREAM(stream)    (stream != NULL && __IS_STDERR_STREAM(stream))
-#ifdef TARGET_WINDOWS
-#define IS_VALID_STREAM(stream)     (stream != NULL && (stream->_ptr != NULL))
-#else
-#define IS_VALID_STREAM(stream)     true
-#endif
+#define IS_VALID_STREAM(stream)     (stream != nullptr)
 
 
 #define IS_STD_STREAM(stream)       (stream != NULL && (__IS_STDIN_STREAM(stream) || __IS_STDOUT_STREAM(stream) || __IS_STDERR_STREAM(stream)))
@@ -116,7 +98,8 @@ extern "C"
   int dll_feof (FILE * stream);
   int dll_fread (void * buffer, size_t size, size_t count, FILE * stream);
   int dll_getc (FILE * stream);
-  FILE * dll_fopen (const char * filename, const char * mode);
+  FILE * dll_fopen(const char * filename, const char * mode);
+  int dll_fopen_s(FILE** pFile, const char * filename, const char * mode);
   int dll_fputc (int character, FILE * stream);
   int dll_putcchar (int character);
   int dll_fputs (const char * szLine , FILE* stream);
@@ -126,7 +109,7 @@ extern "C"
   long dll_ftell(FILE *stream);
   off64_t dll_ftell64(FILE *stream);
   long dll_tell ( int fd );
-  __int64 dll_telli64 ( int fd );
+  long long dll_telli64 ( int fd );
   size_t dll_fwrite ( const void * buffer, size_t size, size_t count, FILE * stream );
   int dll_fflush (FILE * stream);
   int dll_ferror (FILE * stream);
@@ -141,13 +124,6 @@ extern "C"
   void dll_clearerr(FILE* stream);
   int dll_initterm(PFV * start, PFV * end);
   uintptr_t dll_beginthread(void( *start_address )( void * ),unsigned stack_size,void *arglist);
-  HANDLE dll_beginthreadex(LPSECURITY_ATTRIBUTES lpThreadAttributes, DWORD dwStackSize,
-                           LPTHREAD_START_ROUTINE lpStartAddress, LPVOID lpParameter, DWORD dwCreationFlags,
-#ifdef TARGET_FREEBSD
-                           LPLONG lpThreadId);
-#else
-                           LPDWORD lpThreadId);
-#endif
   int dll_stati64(const char *path, struct _stati64 *buffer);
   int dll_stat64(const char *path, struct __stat64 *buffer);
 #ifdef TARGET_WINDOWS
@@ -160,7 +136,7 @@ extern "C"
   void dllperror(const char* s);
   char* dllstrerror(int iErr);
   int dll_mkdir(const char* dir);
-  char* dll_getcwd(char *buffer, int maxlen);
+  const char* dll_getcwd(char *buffer, int maxlen);
   int dll_putenv(const char* envstring);
   int dll_ctype(int i);
   int dll_system(const char *command);
@@ -179,8 +155,6 @@ extern "C"
   int dll_open_osfhandle(intptr_t _OSFileHandle, int _Flags);
 #endif
   int dll_setvbuf(FILE *stream, char *buf, int type, size_t size);
-  int dll_filbuf(FILE *fp);
-  int dll_flsbuf(int data, FILE*fp);
 
 #if defined(TARGET_ANDROID)
   volatile int * __cdecl dll_errno(void);
@@ -190,8 +164,4 @@ extern "C"
 
   extern char **dll__environ;
 }
-
-
-
-#endif // _EMU_MSVCRT_H_
 
