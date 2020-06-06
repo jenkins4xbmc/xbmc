@@ -1,27 +1,16 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "PlayListURL.h"
+
 #include "filesystem/File.h"
-#include "utils/URIUtils.h"
 #include "utils/StringUtils.h"
+#include "utils/URIUtils.h"
 
 using namespace PLAYLIST;
 using namespace XFILE;
@@ -32,16 +21,14 @@ using namespace XFILE;
 //[InternetShortcut]
 //URL=http://msdn2.microsoft.com/en-us/library/ms812698.aspx
 
-CPlayListURL::CPlayListURL(void)
-{}
+CPlayListURL::CPlayListURL(void) = default;
 
-CPlayListURL::~CPlayListURL(void)
-{}
+CPlayListURL::~CPlayListURL(void) = default;
 
-bool CPlayListURL::Load(const CStdString& strFileName)
+bool CPlayListURL::Load(const std::string& strFileName)
 {
   char szLine[4096];
-  CStdString strLine;
+  std::string strLine;
 
   Clear();
 
@@ -60,15 +47,15 @@ bool CPlayListURL::Load(const CStdString& strFileName)
     strLine = szLine;
     StringUtils::RemoveCRLF(strLine);
 
-    if (strLine.Left(18) == "[InternetShortcut]")
+    if (StringUtils::StartsWith(strLine, "[InternetShortcut]"))
     {
       if (file.ReadString(szLine,1024))
       {
         strLine  = szLine;
         StringUtils::RemoveCRLF(strLine);
-        if (strLine.Left(4) == "URL=")
+        if (StringUtils::StartsWith(strLine, "URL="))
         {
-          CFileItemPtr newItem(new CFileItem(strLine.Mid(4),false));
+          CFileItemPtr newItem(new CFileItem(strLine.substr(4), false));
           Add(newItem);
         }
       }

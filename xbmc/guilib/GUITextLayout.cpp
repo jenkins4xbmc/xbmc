@@ -1,33 +1,19 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "GUITextLayout.h"
-#include "GUIFont.h"
-#include "GUIControl.h"
+
 #include "GUIColorManager.h"
+#include "GUIComponent.h"
+#include "GUIControl.h"
+#include "GUIFont.h"
 #include "utils/CharsetConverter.h"
 #include "utils/StringUtils.h"
-
-using namespace std;
-
-#define WORK_AROUND_NEEDED_FOR_LINE_BREAKS
 
 CGUIString::CGUIString(iString start, iString end, bool carriageReturn)
 {
@@ -35,9 +21,9 @@ CGUIString::CGUIString(iString start, iString end, bool carriageReturn)
   m_carriageReturn = carriageReturn;
 }
 
-CStdString CGUIString::GetAsString() const
+std::string CGUIString::GetAsString() const
 {
-  CStdString text;
+  std::string text;
   for (unsigned int i = 0; i < m_text.size(); i++)
     text += (char)(m_text[i] & 0xff);
   return text;
@@ -45,13 +31,14 @@ CStdString CGUIString::GetAsString() const
 
 CGUITextLayout::CGUITextLayout(CGUIFont *font, bool wrap, float fHeight, CGUIFont *borderFont)
 {
-  m_font = font;
+  m_varFont = m_font = font;
   m_borderFont = borderFont;
   m_textColor = 0;
   m_wrap = wrap;
   m_maxHeight = fHeight;
   m_textWidth = 0;
   m_textHeight = 0;
+  m_lastUpdateW = false;
 }
 
 void CGUITextLayout::SetWrap(bool bWrap)
@@ -59,7 +46,7 @@ void CGUITextLayout::SetWrap(bool bWrap)
   m_wrap = bWrap;
 }
 
-void CGUITextLayout::Render(float x, float y, float angle, color_t color, color_t shadowColor, uint32_t alignment, float maxWidth, bool solid)
+void CGUITextLayout::Render(float x, float y, float angle, UTILS::Color color, UTILS::Color shadowColor, uint32_t alignment, float maxWidth, bool solid)
 {
   if (!m_font)
     return;
@@ -72,18 +59,17 @@ void CGUITextLayout::Render(float x, float y, float angle, color_t color, color_
   if (angle)
   {
     static const float degrees_to_radians = 0.01745329252f;
-    g_graphicsContext.AddTransform(TransformMatrix::CreateZRotation(angle * degrees_to_radians, x, y, g_graphicsContext.GetScalingPixelRatio()));
+    CServiceBroker::GetWinSystem()->GetGfxContext().AddTransform(TransformMatrix::CreateZRotation(angle * degrees_to_radians, x, y, CServiceBroker::GetWinSystem()->GetGfxContext().GetScalingPixelRatio()));
   }
   // center our text vertically
   if (alignment & XBFONT_CENTER_Y)
   {
-    y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;;
+    y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;
     alignment &= ~XBFONT_CENTER_Y;
   }
   m_font->Begin();
-  for (vector<CGUIString>::iterator i = m_lines.begin(); i != m_lines.end(); i++)
+  for (const auto& string : m_lines)
   {
-    const CGUIString &string = *i;
     uint32_t align = alignment;
     if (align & XBFONT_JUSTIFIED && string.m_carriageReturn)
       align &= ~XBFONT_JUSTIFIED;
@@ -95,11 +81,21 @@ void CGUITextLayout::Render(float x, float y, float angle, color_t color, color_
   }
   m_font->End();
   if (angle)
-    g_graphicsContext.RemoveTransform();
+    CServiceBroker::GetWinSystem()->GetGfxContext().RemoveTransform();
+}
+
+bool CGUITextLayout::UpdateScrollinfo(CScrollInfo &scrollInfo)
+{
+  if (!m_font)
+    return false;
+  if (m_lines.empty())
+    return false;
+
+  return m_font->UpdateScrollInfo(m_lines[0].m_text, scrollInfo);
 }
 
 
-void CGUITextLayout::RenderScrolling(float x, float y, float angle, color_t color, color_t shadowColor, uint32_t alignment, float maxWidth, CScrollInfo &scrollInfo)
+void CGUITextLayout::RenderScrolling(float x, float y, float angle, UTILS::Color color, UTILS::Color shadowColor, uint32_t alignment, float maxWidth, const CScrollInfo &scrollInfo)
 {
   if (!m_font)
     return;
@@ -112,12 +108,12 @@ void CGUITextLayout::RenderScrolling(float x, float y, float angle, color_t colo
   if (angle)
   {
     static const float degrees_to_radians = 0.01745329252f;
-    g_graphicsContext.AddTransform(TransformMatrix::CreateZRotation(angle * degrees_to_radians, x, y, g_graphicsContext.GetScalingPixelRatio()));
+    CServiceBroker::GetWinSystem()->GetGfxContext().AddTransform(TransformMatrix::CreateZRotation(angle * degrees_to_radians, x, y, CServiceBroker::GetWinSystem()->GetGfxContext().GetScalingPixelRatio()));
   }
   // center our text vertically
   if (alignment & XBFONT_CENTER_Y)
   {
-    y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;;
+    y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;
     alignment &= ~XBFONT_CENTER_Y;
   }
   m_font->Begin();
@@ -127,34 +123,30 @@ void CGUITextLayout::RenderScrolling(float x, float y, float angle, color_t colo
   //       any difference to the smoothness of scrolling though which will be
   //       jumpy with this sort of thing.  It's not exactly a well used situation
   //       though, so this hack is probably OK.
-  float speed = scrollInfo.pixelSpeed;
-  for (vector<CGUIString>::iterator i = m_lines.begin(); i != m_lines.end(); i++)
+  for (const auto& string : m_lines)
   {
-    const CGUIString &string = *i;
     m_font->DrawScrollingText(x, y, m_colors, shadowColor, string.m_text, alignment, maxWidth, scrollInfo);
     y += m_font->GetLineHeight();
-    scrollInfo.pixelSpeed = 0;
   }
-  scrollInfo.pixelSpeed = speed;
   m_font->End();
   if (angle)
-    g_graphicsContext.RemoveTransform();
+    CServiceBroker::GetWinSystem()->GetGfxContext().RemoveTransform();
 }
 
-void CGUITextLayout::RenderOutline(float x, float y, color_t color, color_t outlineColor, uint32_t alignment, float maxWidth)
+void CGUITextLayout::RenderOutline(float x, float y, UTILS::Color color, UTILS::Color outlineColor, uint32_t alignment, float maxWidth)
 {
   if (!m_font)
     return;
 
   // set the outline color
-  vecColors outlineColors;
+  std::vector<UTILS::Color> outlineColors;
   if (m_colors.size())
     outlineColors.push_back(outlineColor);
 
   // center our text vertically
   if (alignment & XBFONT_CENTER_Y)
   {
-    y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;;
+    y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;
     alignment &= ~XBFONT_CENTER_Y;
   }
   if (m_borderFont)
@@ -162,18 +154,17 @@ void CGUITextLayout::RenderOutline(float x, float y, color_t color, color_t outl
     // adjust so the baselines of the fonts align
     float by = y + m_font->GetTextBaseLine() - m_borderFont->GetTextBaseLine();
     m_borderFont->Begin();
-    for (vector<CGUIString>::iterator i = m_lines.begin(); i != m_lines.end(); i++)
+    for (const auto& string : m_lines)
     {
-      const CGUIString &string = *i;
       uint32_t align = alignment;
       if (align & XBFONT_JUSTIFIED && string.m_carriageReturn)
         align &= ~XBFONT_JUSTIFIED;
       // text centered horizontally must be computed using the original font, not the bordered
       // font, as the bordered font will be wider, and thus will end up uncentered.
-      // TODO: We should really have a better way to handle text extent - at the moment we assume
-      //       that text is rendered from a posx, posy, width, and height which isn't enough to
-      //       accurately position text. We need a vertical and horizontal offset of the baseline
-      //       and cursor as well.
+      //! @todo We should really have a better way to handle text extent - at the moment we assume
+      //!       that text is rendered from a posx, posy, width, and height which isn't enough to
+      //!       accurately position text. We need a vertical and horizontal offset of the baseline
+      //!       and cursor as well.
       float bx = x;
       if (align & XBFONT_CENTER_X)
       {
@@ -194,9 +185,8 @@ void CGUITextLayout::RenderOutline(float x, float y, color_t color, color_t outl
     m_colors[0] = color;
 
   m_font->Begin();
-  for (vector<CGUIString>::iterator i = m_lines.begin(); i != m_lines.end(); i++)
+  for (const auto& string : m_lines)
   {
-    const CGUIString &string = *i;
     uint32_t align = alignment;
     if (align & XBFONT_JUSTIFIED && string.m_carriageReturn)
       align &= ~XBFONT_JUSTIFIED;
@@ -208,33 +198,42 @@ void CGUITextLayout::RenderOutline(float x, float y, color_t color, color_t outl
   m_font->End();
 }
 
-bool CGUITextLayout::Update(const CStdString &text, float maxWidth, bool forceUpdate /*= false*/, bool forceLTRReadingOrder /*= false*/)
+bool CGUITextLayout::Update(const std::string &text, float maxWidth, bool forceUpdate /*= false*/, bool forceLTRReadingOrder /*= false*/)
 {
-  // convert to utf16
-  CStdStringW utf16;
-  utf8ToW(text, utf16);
-
-  // update
-  return UpdateW(utf16, maxWidth, forceUpdate, forceLTRReadingOrder);
-}
-
-bool CGUITextLayout::UpdateW(const CStdStringW &text, float maxWidth /*= 0*/, bool forceUpdate /*= false*/, bool forceLTRReadingOrder /*= false*/)
-{
-  if (text.Equals(m_lastText) && !forceUpdate)
+  if (text == m_lastUtf8Text && !forceUpdate && !m_lastUpdateW)
     return false;
 
+  m_lastUtf8Text = text;
+  m_lastUpdateW = false;
+  std::wstring utf16;
+  g_charsetConverter.utf8ToW(text, utf16, false);
+  UpdateCommon(utf16, maxWidth, forceLTRReadingOrder);
+  return true;
+}
+
+bool CGUITextLayout::UpdateW(const std::wstring &text, float maxWidth /*= 0*/, bool forceUpdate /*= false*/, bool forceLTRReadingOrder /*= false*/)
+{
+  if (text == m_lastText && !forceUpdate && m_lastUpdateW)
+    return false;
+
+  m_lastText = text;
+  m_lastUpdateW = true;
+  UpdateCommon(text, maxWidth, forceLTRReadingOrder);
+  return true;
+}
+
+void CGUITextLayout::UpdateCommon(const std::wstring &text, float maxWidth, bool forceLTRReadingOrder)
+{
   // parse the text for style information
   vecText parsedText;
-  vecColors colors;
+  std::vector<UTILS::Color> colors;
   ParseText(text, m_font ? m_font->GetStyle() : 0, m_textColor, colors, parsedText);
 
   // and update
   UpdateStyled(parsedText, colors, maxWidth, forceLTRReadingOrder);
-  m_lastText = text;
-  return true;
 }
 
-void CGUITextLayout::UpdateStyled(const vecText &text, const vecColors &colors, float maxWidth, bool forceLTRReadingOrder)
+void CGUITextLayout::UpdateStyled(const vecText &text, const std::vector<UTILS::Color> &colors, float maxWidth, bool forceLTRReadingOrder)
 {
   // empty out our previous string
   m_lines.clear();
@@ -257,74 +256,86 @@ void CGUITextLayout::UpdateStyled(const vecText &text, const vecColors &colors, 
 }
 
 // BidiTransform is used to handle RTL text flipping in the string
-void CGUITextLayout::BidiTransform(vector<CGUIString> &lines, bool forceLTRReadingOrder)
+void CGUITextLayout::BidiTransform(std::vector<CGUIString>& lines, bool forceLTRReadingOrder)
 {
-  for (unsigned int i=0; i<lines.size(); i++)
+  for (unsigned int i = 0; i < lines.size(); i++)
   {
-    CGUIString &line = lines[i];
+    CGUIString& line = lines[i];
+    unsigned int lineLength = line.m_text.size();
+    std::wstring logicalText;
+    vecText style;
 
-    // reserve enough space in the flipped text
-    vecText flippedText;
-    flippedText.reserve(line.m_text.size());
+    logicalText.reserve(lineLength);
+    style.reserve(lineLength);
 
-    character_t sectionStyle = 0xffff0000; // impossible to achieve
-    CStdStringW sectionText;
-    for (vecText::iterator it = line.m_text.begin(); it != line.m_text.end(); ++it)
+    // Separate the text and style for the input styled text
+    for (const auto& it : line.m_text)
     {
-      character_t style = *it & 0xffff0000;
-      if (style != sectionStyle)
+      logicalText.push_back((wchar_t)(it & 0xffff));
+      style.push_back(it & 0xffff0000);
+    }
+
+    // Allocate memory for visual to logical map and call bidi
+    int* visualToLogicalMap = new (std::nothrow) int[lineLength + 1]();
+    std::wstring visualText = BidiFlip(logicalText, forceLTRReadingOrder, visualToLogicalMap);
+
+    vecText styledVisualText;
+    styledVisualText.reserve(lineLength);
+
+    // If memory allocation failed, fallback to text with no styling
+    if (!visualToLogicalMap)
+    {
+      for (unsigned int j = 0; j < visualText.size(); j++)
       {
-        if (!sectionText.IsEmpty())
-        { // style has changed, bidi flip text
-          CStdStringW sectionFlipped = BidiFlip(sectionText, forceLTRReadingOrder);
-          for (unsigned int j = 0; j < sectionFlipped.size(); j++)
-            flippedText.push_back(sectionStyle | sectionFlipped[j]);
-        }
-        sectionStyle = style;
-        sectionText.clear();
+        styledVisualText.push_back(visualText[j]);
       }
-      sectionText.push_back( (wchar_t)(*it & 0xffff) );
     }
-
-    // handle the last section
-    if (!sectionText.IsEmpty())
+    else
     {
-      CStdStringW sectionFlipped = BidiFlip(sectionText, forceLTRReadingOrder);
-      for (unsigned int j = 0; j < sectionFlipped.size(); j++)
-        flippedText.push_back(sectionStyle | sectionFlipped[j]);
+      for (unsigned int j = 0; j < visualText.size(); j++)
+      {
+        styledVisualText.push_back(style[visualToLogicalMap[j]] | visualText[j]);
+      }
     }
 
-    // replace the original line with the proccessed one
-    lines[i] = CGUIString(flippedText.begin(), flippedText.end(), line.m_carriageReturn);
+    delete[] visualToLogicalMap;
+
+    // replace the original line with the processed one
+    lines[i] = CGUIString(styledVisualText.begin(), styledVisualText.end(), line.m_carriageReturn);
   }
 }
 
-CStdStringW CGUITextLayout::BidiFlip(const CStdStringW &text, bool forceLTRReadingOrder)
+std::wstring CGUITextLayout::BidiFlip(const std::wstring& text,
+                                      bool forceLTRReadingOrder,
+                                      int* visualToLogicalMap /*= nullptr*/)
 {
-  CStdStringA utf8text;
-  CStdStringW visualText;
+  std::wstring visualText;
+  std::u32string utf32logical;
+  std::u32string utf32visual;
 
-  // convert to utf8, and back to utf16 with bidi flipping
-  g_charsetConverter.wToUTF8(text, utf8text);
-  g_charsetConverter.utf8ToW(utf8text, visualText, true, forceLTRReadingOrder);
+  // Convert to utf32, call bidi then convert the result back to utf16
+  g_charsetConverter.wToUtf32(text, utf32logical);
+  g_charsetConverter.utf32logicalToVisualBiDi(utf32logical, utf32visual, false, false,
+                                              visualToLogicalMap);
+  g_charsetConverter.utf32ToW(utf32visual, visualText);
 
   return visualText;
 }
 
-void CGUITextLayout::Filter(CStdString &text)
+void CGUITextLayout::Filter(std::string &text)
 {
-  CStdStringW utf16;
-  utf8ToW(text, utf16);
-  vecColors colors;
+  std::wstring utf16;
+  g_charsetConverter.utf8ToW(text, utf16, false);
+  std::vector<UTILS::Color> colors;
   vecText parsedText;
   ParseText(utf16, 0, 0xffffffff, colors, parsedText);
-  utf16.Empty();
+  utf16.clear();
   for (unsigned int i = 0; i < parsedText.size(); i++)
     utf16 += (wchar_t)(0xffff & parsedText[i]);
   g_charsetConverter.wToUTF8(utf16, text);
 }
 
-void CGUITextLayout::ParseText(const CStdStringW &text, uint32_t defaultStyle, color_t defaultColor, vecColors &colors, vecText &parsedText)
+void CGUITextLayout::ParseText(const std::wstring &text, uint32_t defaultStyle, UTILS::Color defaultColor, std::vector<UTILS::Color> &colors, vecText &parsedText)
 {
   // run through the string, searching for:
   // [B] or [/B] -> toggle bold on and off
@@ -333,10 +344,10 @@ void CGUITextLayout::ParseText(const CStdStringW &text, uint32_t defaultStyle, c
   // [CAPS <option>] or [/CAPS] -> toggle capatilization on and off
 
   uint32_t currentStyle = defaultStyle; // start with the default font's style
-  color_t currentColor = 0;
+  UTILS::Color currentColor = 0;
 
   colors.push_back(defaultColor);
-  stack<color_t> colorStack;
+  std::stack<UTILS::Color> colorStack;
   colorStack.push(0);
 
   // these aren't independent, but that's probably not too much of an issue
@@ -344,62 +355,78 @@ void CGUITextLayout::ParseText(const CStdStringW &text, uint32_t defaultStyle, c
   // but [LOWERCASE]Glah[UPPERCASE]FReD[/UPPERCASE]Georeg[/LOWERCASE] won't
 
   int startPos = 0;
-  size_t pos = text.Find(L'[');
-  while (pos != CStdString::npos && pos + 1 < text.size())
+  size_t pos = text.find(L'[');
+  while (pos != std::string::npos && pos + 1 < text.size())
   {
     uint32_t newStyle = 0;
-    color_t newColor = currentColor;
+    UTILS::Color newColor = currentColor;
     bool colorTagChange = false;
     bool newLine = false;
     // have a [ - check if it's an ON or OFF switch
     bool on(true);
-    int endPos = pos++; // finish of string
+    size_t endPos = pos++; // finish of string
     if (text[pos] == L'/')
     {
       on = false;
       pos++;
     }
     // check for each type
-    if (text.Mid(pos,2) == L"B]")
+    if (text.compare(pos, 2, L"B]") == 0)
     { // bold - finish the current text block and assign the bold state
       pos += 2;
-      if ((on && text.Find(L"[/B]",pos) >= 0) ||          // check for a matching end point
+      if ((on && text.find(L"[/B]",pos) != std::string::npos) ||          // check for a matching end point
          (!on && (currentStyle & FONT_STYLE_BOLD)))       // or matching start point
         newStyle = FONT_STYLE_BOLD;
     }
-    else if (text.Mid(pos,2) == L"I]")
+    else if (text.compare(pos, 2, L"I]") == 0)
     { // italics
       pos += 2;
-      if ((on && text.Find(L"[/I]",pos) >= 0) ||          // check for a matching end point
+      if ((on && text.find(L"[/I]", pos) != std::string::npos) ||          // check for a matching end point
          (!on && (currentStyle & FONT_STYLE_ITALICS)))    // or matching start point
         newStyle = FONT_STYLE_ITALICS;
     }
-    else if (text.Mid(pos,10) == L"UPPERCASE]")
+    else if (text.compare(pos, 10, L"UPPERCASE]") == 0)
     {
       pos += 10;
-      if ((on && text.Find(L"[/UPPERCASE]",pos) >= 0) ||  // check for a matching end point
+      if ((on && text.find(L"[/UPPERCASE]", pos) != std::string::npos) ||  // check for a matching end point
          (!on && (currentStyle & FONT_STYLE_UPPERCASE)))  // or matching start point
         newStyle = FONT_STYLE_UPPERCASE;
     }
-    else if (text.Mid(pos,10) == L"LOWERCASE]")
+    else if (text.compare(pos, 10, L"LOWERCASE]") == 0)
     {
       pos += 10;
-      if ((on && text.Find(L"[/LOWERCASE]",pos) >= 0) ||  // check for a matching end point
+      if ((on && text.find(L"[/LOWERCASE]", pos) != std::string::npos) ||  // check for a matching end point
          (!on && (currentStyle & FONT_STYLE_LOWERCASE)))  // or matching start point
         newStyle = FONT_STYLE_LOWERCASE;
     }
-    else if (text.Mid(pos,3) == L"CR]" && on)
+    else if (text.compare(pos, 11, L"CAPITALIZE]") == 0)
+    {
+      pos += 11;
+      if ((on && text.find(L"[/CAPITALIZE]", pos) != std::string::npos) ||  // check for a matching end point
+         (!on && (currentStyle & FONT_STYLE_CAPITALIZE)))  // or matching start point
+        newStyle = FONT_STYLE_CAPITALIZE;
+    }
+    else if (text.compare(pos, 6, L"LIGHT]") == 0)
+    {
+      pos += 6;
+      if ((on && text.find(L"[/LIGHT]", pos) != std::string::npos) ||
+         (!on && (currentStyle & FONT_STYLE_LIGHT)))
+        newStyle = FONT_STYLE_LIGHT;
+    }
+    else if (text.compare(pos, 3, L"CR]") == 0 && on)
     {
       newLine = true;
       pos += 3;
     }
-    else if (text.Mid(pos,5) == L"COLOR")
+    else if (text.compare(pos,5, L"COLOR") == 0)
     { // color
-      size_t finish = text.Find(L']', pos + 5);
-      if (on && finish != CStdString::npos && (size_t)text.Find(L"[/COLOR]",finish) != CStdString::npos)
+      size_t finish = text.find(L']', pos + 5);
+      if (on && finish != std::string::npos && text.find(L"[/COLOR]",finish) != std::string::npos)
       {
-        color_t color = g_colorManager.GetColor(text.Mid(pos + 5, finish - pos - 5));
-        vecColors::const_iterator it = std::find(colors.begin(), colors.end(), color);
+        std::string t;
+        g_charsetConverter.wToUTF8(text.substr(pos + 5, finish - pos - 5), t);
+        UTILS::Color color = CServiceBroker::GetGUI()->GetColorManager().GetColor(t);
+        const auto& it = std::find(colors.begin(), colors.end(), color);
         if (it == colors.end())
         { // create new color
           if (colors.size() <= 0xFF)
@@ -422,18 +449,20 @@ void CGUITextLayout::ParseText(const CStdStringW &text, uint32_t defaultStyle, c
         newColor = colorStack.top();
         colorTagChange = true;
       }
-      if (finish != CStdString::npos)
+      if (finish != std::string::npos)
         pos = finish + 1;
     }
 
     if (newStyle || colorTagChange || newLine)
     { // we have a new style or a new color, so format up the previous segment
-      CStdStringW subText = text.Mid(startPos, endPos - startPos);
+      std::wstring subText = text.substr(startPos, endPos - startPos);
       if (currentStyle & FONT_STYLE_UPPERCASE)
-        subText.ToUpper();
+        StringUtils::ToUpper(subText);
       if (currentStyle & FONT_STYLE_LOWERCASE)
-        subText.ToLower();
-      AppendToUTF32(subText, ((currentStyle & 3) << 24) | (currentColor << 16), parsedText);
+        StringUtils::ToLower(subText);
+      if (currentStyle & FONT_STYLE_CAPITALIZE)
+        StringUtils::ToCapitalize(subText);
+      AppendToUTF32(subText, ((currentStyle & FONT_STYLE_MASK) << 24) | (currentColor << 16), parsedText);
       if (newLine)
         parsedText.push_back(L'\n');
 
@@ -445,15 +474,17 @@ void CGUITextLayout::ParseText(const CStdStringW &text, uint32_t defaultStyle, c
       else
         currentStyle &= ~newStyle;
     }
-    pos = text.Find(L'[',pos);
+    pos = text.find(L'[', pos);
   }
   // now grab the remainder of the string
-  CStdStringW subText = text.Mid(startPos, text.GetLength() - startPos);
+  std::wstring subText = text.substr(startPos);
   if (currentStyle & FONT_STYLE_UPPERCASE)
-    subText.ToUpper();
+    StringUtils::ToUpper(subText);
   if (currentStyle & FONT_STYLE_LOWERCASE)
-    subText.ToLower();
-  AppendToUTF32(subText, ((currentStyle & 3) << 24) | (currentColor << 16), parsedText);
+    StringUtils::ToLower(subText);
+  if (currentStyle & FONT_STYLE_CAPITALIZE)
+    StringUtils::ToCapitalize(subText);
+  AppendToUTF32(subText, ((currentStyle & FONT_STYLE_MASK) << 24) | (currentColor << 16), parsedText);
 }
 
 void CGUITextLayout::SetMaxHeight(float fHeight)
@@ -470,7 +501,7 @@ void CGUITextLayout::WrapText(const vecText &text, float maxWidth)
 
   m_lines.clear();
 
-  vector<CGUIString> lines;
+  std::vector<CGUIString> lines;
   LineBreakText(text, lines);
 
   for (unsigned int i = 0; i < lines.size(); i++)
@@ -500,7 +531,7 @@ void CGUITextLayout::WrapText(const vecText &text, float maxWidth)
             // skip over spaces
             pos = lastSpace;
             while (pos != line.m_text.end() && IsSpace(*pos))
-              pos++;
+              ++pos;
             curLine.clear();
             lastSpaceInLine = 0;
             lastSpace = line.m_text.begin();
@@ -511,7 +542,7 @@ void CGUITextLayout::WrapText(const vecText &text, float maxWidth)
         lastSpaceInLine = curLine.size();
       }
       curLine.push_back(letter);
-      pos++;
+      ++pos;
     }
     // now add whatever we have left to the string
     float width = m_font->GetTextWidth(curLine);
@@ -538,7 +569,7 @@ void CGUITextLayout::WrapText(const vecText &text, float maxWidth)
   }
 }
 
-void CGUITextLayout::LineBreakText(const vecText &text, vector<CGUIString> &lines)
+void CGUITextLayout::LineBreakText(const vecText &text, std::vector<CGUIString> &lines)
 {
   int nMaxLines = (m_maxHeight > 0 && m_font && m_font->GetLineHeight() > 0)?(int)ceilf(m_maxHeight / m_font->GetLineHeight()):-1;
   vecText::const_iterator lineStart = text.begin();
@@ -555,7 +586,7 @@ void CGUITextLayout::LineBreakText(const vecText &text, vector<CGUIString> &line
       lines.push_back(string);
       lineStart = pos + 1;
     }
-    pos++;
+    ++pos;
   }
   // handle the last line if non-empty
   if (lineStart < text.end() && (nMaxLines <= 0 || lines.size() < (size_t)nMaxLines))
@@ -577,9 +608,8 @@ void CGUITextLayout::CalcTextExtent()
   m_textHeight = 0;
   if (!m_font) return;
 
-  for (vector<CGUIString>::iterator i = m_lines.begin(); i != m_lines.end(); i++)
+  for (const auto& string : m_lines)
   {
-    const CGUIString &string = *i;
     float w = m_font->GetTextWidth(string.m_text);
     if (w > m_textWidth)
       m_textWidth = w;
@@ -590,8 +620,8 @@ void CGUITextLayout::CalcTextExtent()
 unsigned int CGUITextLayout::GetTextLength() const
 {
   unsigned int length = 0;
-  for (vector<CGUIString>::const_iterator i = m_lines.begin(); i != m_lines.end(); i++)
-    length += i->m_text.size();
+  for (const auto& string : m_lines)
+    length += string.m_text.size();
   return length;
 }
 
@@ -602,16 +632,27 @@ void CGUITextLayout::GetFirstText(vecText &text) const
     text = m_lines[0].m_text;
 }
 
-float CGUITextLayout::GetTextWidth(const CStdStringW &text) const
+float CGUITextLayout::GetTextWidth(const std::wstring &text) const
 {
   // NOTE: Assumes a single line of text
   if (!m_font) return 0;
   vecText utf32;
-  AppendToUTF32(text, (m_font->GetStyle() & 3) << 24, utf32);
+  AppendToUTF32(text, (m_font->GetStyle() & FONT_STYLE_MASK) << 24, utf32);
   return m_font->GetTextWidth(utf32);
 }
 
-void CGUITextLayout::DrawText(CGUIFont *font, float x, float y, color_t color, color_t shadowColor, const CStdString &text, uint32_t align)
+std::string CGUITextLayout::GetText() const
+{
+  if (m_lastUpdateW)
+  {
+    std::string utf8;
+    g_charsetConverter.wToUTF8(m_lastText, utf8);
+    return utf8;
+  }
+  return m_lastUtf8Text;
+}
+
+void CGUITextLayout::DrawText(CGUIFont *font, float x, float y, UTILS::Color color, UTILS::Color shadowColor, const std::string &text, uint32_t align)
 {
   if (!font) return;
   vecText utf32;
@@ -619,7 +660,7 @@ void CGUITextLayout::DrawText(CGUIFont *font, float x, float y, color_t color, c
   font->DrawText(x, y, color, shadowColor, utf32, align, 0);
 }
 
-void CGUITextLayout::AppendToUTF32(const CStdStringW &utf16, character_t colStyle, vecText &utf32)
+void CGUITextLayout::AppendToUTF32(const std::wstring &utf16, character_t colStyle, vecText &utf32)
 {
   // NOTE: Assumes a single line of text
   utf32.reserve(utf32.size() + utf16.size());
@@ -627,40 +668,19 @@ void CGUITextLayout::AppendToUTF32(const CStdStringW &utf16, character_t colStyl
     utf32.push_back(utf16[i] | colStyle);
 }
 
-void CGUITextLayout::utf8ToW(const CStdString &utf8, CStdStringW &utf16)
+void CGUITextLayout::AppendToUTF32(const std::string &utf8, character_t colStyle, vecText &utf32)
 {
-#ifdef WORK_AROUND_NEEDED_FOR_LINE_BREAKS
-  // NOTE: This appears to strip \n characters from text.  This may be a consequence of incorrect
-  //       expression of the \n in utf8 (we just use character code 10) or it might be something
-  //       more sinister.  For now, we use the workaround below.
-  CStdStringArray multiLines;
-  StringUtils::SplitString(utf8, "\n", multiLines);
-  for (unsigned int i = 0; i < multiLines.size(); i++)
-  {
-    CStdStringW line;
-    // no need to bidiflip here - it's done in BidiTransform above
-    g_charsetConverter.utf8ToW(multiLines[i], line, false);
-    utf16 += line;
-    if (i < multiLines.size() - 1)
-      utf16.push_back(L'\n');
-  }
-#else
+  std::wstring utf16;
   // no need to bidiflip here - it's done in BidiTransform above
   g_charsetConverter.utf8ToW(utf8, utf16, false);
-#endif
-}
-
-void CGUITextLayout::AppendToUTF32(const CStdString &utf8, character_t colStyle, vecText &utf32)
-{
-  CStdStringW utf16;
-  utf8ToW(utf8, utf16);
   AppendToUTF32(utf16, colStyle, utf32);
 }
 
 void CGUITextLayout::Reset()
 {
   m_lines.clear();
-  m_lastText.Empty();
+  m_lastText.clear();
+  m_lastUtf8Text.clear();
   m_textWidth = m_textHeight = 0;
 }
 

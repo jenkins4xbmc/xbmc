@@ -1,38 +1,28 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "InfoTagMusic.h"
-#include "utils/StringUtils.h"
+
+#include "ServiceBroker.h"
 #include "settings/AdvancedSettings.h"
+#include "settings/SettingsComponent.h"
+#include "utils/StringUtils.h"
 
 namespace XBMCAddon
 {
   namespace xbmc
   {
-    InfoTagMusic::InfoTagMusic() : AddonClass("InfoTagMusic")
+    InfoTagMusic::InfoTagMusic()
     {
       infoTag = new MUSIC_INFO::CMusicInfoTag();
     }
 
-    InfoTagMusic::InfoTagMusic(const MUSIC_INFO::CMusicInfoTag& tag) : AddonClass("InfoTagMusic")
+    InfoTagMusic::InfoTagMusic(const MUSIC_INFO::CMusicInfoTag& tag)
     {
       infoTag = new MUSIC_INFO::CMusicInfoTag();
       *infoTag = tag;
@@ -41,6 +31,11 @@ namespace XBMCAddon
     InfoTagMusic::~InfoTagMusic()
     {
       delete infoTag;
+    }
+
+    int InfoTagMusic::getDbId()
+    {
+      return infoTag->GetDatabaseId();
     }
 
     String InfoTagMusic::getURL()
@@ -53,14 +48,19 @@ namespace XBMCAddon
       return infoTag->GetTitle();
     }
 
+    String InfoTagMusic::getMediaType()
+    {
+      return infoTag->GetType();
+    }
+
     String InfoTagMusic::getArtist()
     {
-      return StringUtils::Join(infoTag->GetArtist(), g_advancedSettings.m_musicItemSeparator);
+      return infoTag->GetArtistString();
     }
 
     String InfoTagMusic::getAlbumArtist()
     {
-      return StringUtils::Join(infoTag->GetAlbumArtist(), g_advancedSettings.m_musicItemSeparator);
+      return infoTag->GetAlbumArtistString();
     }
 
     String InfoTagMusic::getAlbum()
@@ -70,12 +70,22 @@ namespace XBMCAddon
 
     String InfoTagMusic::getGenre()
     {
-      return StringUtils::Join(infoTag->GetGenre(), g_advancedSettings.m_musicItemSeparator);
+      return StringUtils::Join(infoTag->GetGenre(), CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_musicItemSeparator);
     }
 
     int InfoTagMusic::getDuration()
     {
       return infoTag->GetDuration();
+    }
+
+    int InfoTagMusic::getRating()
+    {
+      return infoTag->GetRating();
+    }
+
+    int InfoTagMusic::getUserRating()
+    {
+      return infoTag->GetUserrating();
     }
 
     int InfoTagMusic::getTrack()
@@ -90,7 +100,7 @@ namespace XBMCAddon
 
     String InfoTagMusic::getReleaseDate()
     {
-      return infoTag->GetYearString();
+      return infoTag->GetReleaseDate();
     }
 
     int InfoTagMusic::getListeners()
@@ -116,6 +126,31 @@ namespace XBMCAddon
     String InfoTagMusic::getLyrics()
     {
       return infoTag->GetLyrics();
+    }
+
+    String InfoTagMusic::getMusicBrainzTrackID()
+    {
+      return infoTag->GetMusicBrainzTrackID();
+    }
+
+    std::vector<String> InfoTagMusic::getMusicBrainzArtistID()
+    {
+      return infoTag->GetMusicBrainzArtistID();
+    }
+
+    String InfoTagMusic::getMusicBrainzAlbumID()
+    {
+      return infoTag->GetMusicBrainzAlbumID();
+    }
+
+    String InfoTagMusic::getMusicBrainzReleaseGroupID()
+    {
+      return infoTag->GetMusicBrainzReleaseGroupID();
+    }
+
+    std::vector<String> InfoTagMusic::getMusicBrainzAlbumArtistID()
+    {
+      return infoTag->GetMusicBrainzAlbumArtistID();
     }
   }
 }

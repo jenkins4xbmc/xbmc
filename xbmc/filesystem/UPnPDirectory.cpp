@@ -1,35 +1,30 @@
 /*
-* UPnP Support for XBMC
-* Copyright (c) 2006 c0diq (Sylvain Rebaud)
-* Portions Copyright (c) by the authors of libPlatinum
-*
-* http://www.plutinosoft.com/blog/category/platinum/
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation; either version 2 of the License, or
-* (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-*/
-
+ * UPnP Support for XBMC
+ *  Copyright (c) 2006 c0diq (Sylvain Rebaud)
+ *      Portions Copyright (c) by the authors of libPlatinum
+ *      http://www.plutinosoft.com/blog/category/platinum/
+ *
+ *  Copyright (C) 2010-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
+ *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
+ */
 #include "UPnPDirectory.h"
+
+#include "FileItem.h"
+#include "ServiceBroker.h"
 #include "URL.h"
 #include "network/upnp/UPnP.h"
 #include "network/upnp/UPnPInternal.h"
-#include "Platinum.h"
-#include "PltSyncMediaBrowser.h"
-#include "video/VideoInfoTag.h"
-#include "FileItem.h"
-#include "utils/log.h"
+#include "settings/Settings.h"
+#include "settings/SettingsComponent.h"
+#include "utils/StringUtils.h"
 #include "utils/URIUtils.h"
+#include "utils/log.h"
+
+#include <Platinum/Source/Devices/MediaServer/PltSyncMediaBrowser.h>
+#include <Platinum/Source/Platinum/Platinum.h>
 
 using namespace MUSIC_INFO;
 using namespace XFILE;
@@ -38,7 +33,7 @@ using namespace UPNP;
 namespace XFILE
 {
 
-static CStdString GetContentMapping(NPT_String& objectClass)
+static std::string GetContentMapping(NPT_String& objectClass)
 {
     struct SClassMapping
     {
@@ -107,9 +102,9 @@ static bool FindDeviceWait(CUPnP* upnp, const char* uuid, PLT_DeviceDataReferenc
 |   CUPnPDirectory::GetFriendlyName
 +---------------------------------------------------------------------*/
 const char*
-CUPnPDirectory::GetFriendlyName(const char* url)
+CUPnPDirectory::GetFriendlyName(const CURL& url)
 {
-    NPT_String path = url;
+    NPT_String path = url.Get().c_str();
     if (!path.EndsWith("/")) path += "/";
 
     if (path.Left(7).Compare("upnp://", true) != 0) {
@@ -139,17 +134,20 @@ CUPnPDirectory::GetFriendlyName(const char* url)
 +---------------------------------------------------------------------*/
 bool CUPnPDirectory::GetResource(const CURL& path, CFileItem &item)
 {
-    if(path.GetProtocol() != "upnp")
+    if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_SERVICES_UPNP))
+      return false;
+
+    if(!path.IsProtocol("upnp"))
       return false;
 
     CUPnP* upnp = CUPnP::GetInstance();
     if(!upnp)
         return false;
 
-    CStdString uuid   = path.GetHostName();
-    CStdString object = path.GetFileName();
-    object.TrimRight("/");
-    CURL::Decode(object);
+    std::string uuid   = path.GetHostName();
+    std::string object = path.GetFileName();
+    StringUtils::TrimRight(object, "/");
+    object = CURL::Decode(object);
 
     PLT_DeviceDataReference device;
     if(!FindDeviceWait(upnp, uuid.c_str(), device)) {
@@ -180,15 +178,18 @@ bool CUPnPDirectory::GetResource(const CURL& path, CFileItem &item)
 |   CUPnPDirectory::GetDirectory
 +---------------------------------------------------------------------*/
 bool
-CUPnPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
+CUPnPDirectory::GetDirectory(const CURL& url, CFileItemList &items)
 {
+    if (!CServiceBroker::GetSettingsComponent()->GetSettings()->GetBool(CSettings::SETTING_SERVICES_UPNP))
+      return false;
+
     CUPnP* upnp = CUPnP::GetInstance();
 
     /* upnp should never be cached, it has internal cache */
     items.SetCacheToDisc(CFileItemList::CACHE_NEVER);
 
     // We accept upnp://devuuid/[item_id/]
-    NPT_String path = strPath.c_str();
+    NPT_String path = url.Get().c_str();
     if (!path.StartsWith("upnp://", true)) {
         return false;
     }
@@ -204,7 +205,7 @@ CUPnPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
             NPT_String uuid = (*device)->GetUUID();
 
             CFileItemPtr pItem(new CFileItem((const char*)name));
-            pItem->SetPath(CStdString((const char*) "upnp://" + uuid + "/"));
+            pItem->SetPath(std::string((const char*) "upnp://" + uuid + "/"));
             pItem->m_bIsFolder = true;
             pItem->SetArt("thumb", (const char*)(*device)->GetIconUrl("image/png"));
 
@@ -222,9 +223,7 @@ CUPnPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
         NPT_String object_id = (next_slash==-1)?"":path.SubString(next_slash+1);
         object_id.TrimRight("/");
         if (object_id.GetLength()) {
-            CStdString tmp = (char*) object_id;
-            CURL::Decode(tmp);
-            object_id = tmp;
+            object_id = CURL::Decode((char*)object_id).c_str();
         }
 
         // try to find the device with wait on startup
@@ -243,11 +242,11 @@ CUPnPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
         bool video = true;
         bool audio = true;
         bool image = true;
-        m_strFileMask.TrimLeft("/");
-        if (!m_strFileMask.IsEmpty()) {
-            video = m_strFileMask.Find(".wmv") >= 0;
-            audio = m_strFileMask.Find(".wma") >= 0;
-            image = m_strFileMask.Find(".jpg") >= 0;
+        StringUtils::TrimLeft(m_strFileMask, "/");
+        if (!m_strFileMask.empty()) {
+            video = m_strFileMask.find(".wmv") != std::string::npos;
+            audio = m_strFileMask.find(".wma") != std::string::npos;
+            image = m_strFileMask.find(".jpg") != std::string::npos;
         }
 
         // special case for Windows Media Connect and WMP11 when looking for root
@@ -318,21 +317,21 @@ CUPnPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
 
             // keep count of classes
             classes[(*entry)->m_ObjectClass.type]++;
-            CFileItemPtr pItem = BuildObject(*entry);
+            CFileItemPtr pItem = BuildObject(*entry, UPnPClient);
             if(!pItem) {
                 ++entry;
                 continue;
             }
 
-            CStdString id;
+            std::string id;
             if ((*entry)->m_ReferenceID.IsEmpty())
                 id = (const char*) (*entry)->m_ObjectID;
             else
                 id = (const char*) (*entry)->m_ReferenceID;
 
-            CURL::Encode(id);
+            id = CURL::Encode(id);
             URIUtils::AddSlashAtEnd(id);
-            pItem->SetPath(CStdString((const char*) "upnp://" + uuid + "/" + id.c_str()));
+            pItem->SetPath(std::string((const char*) "upnp://" + uuid + "/" + id.c_str()));
 
             items.Add(pItem);
 
@@ -341,22 +340,22 @@ CUPnPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
 
         NPT_String max_string = "";
         int        max_count  = 0;
-        for(std::map<NPT_String, int>::iterator it = classes.begin(); it != classes.end(); it++)
+        for (auto& it : classes)
         {
-          if(it->second > max_count)
+          if (it.second > max_count)
           {
-            max_string = it->first;
-            max_count  = it->second;
+            max_string = it.first;
+            max_count = it.second;
           }
         }
         std::string content = GetContentMapping(max_string);
         items.SetContent(content);
         if (content == "unknown")
         {
-          items.AddSortMethod(SORT_METHOD_UNSORTED, 571, LABEL_MASKS("%L", "%I", "%L", ""));
-          items.AddSortMethod(SORT_METHOD_LABEL_IGNORE_FOLDERS, 551, LABEL_MASKS("%L", "%I", "%L", ""));
-          items.AddSortMethod(SORT_METHOD_SIZE, 553, LABEL_MASKS("%L", "%I", "%L", "%I"));
-          items.AddSortMethod(SORT_METHOD_DATE, 552, LABEL_MASKS("%L", "%J", "%L", "%J"));
+          items.AddSortMethod(SortByNone, 571, LABEL_MASKS("%L", "%I", "%L", ""));
+          items.AddSortMethod(SortByLabel, SortAttributeIgnoreFolders, 551, LABEL_MASKS("%L", "%I", "%L", ""));
+          items.AddSortMethod(SortBySize, 553, LABEL_MASKS("%L", "%I", "%L", "%I"));
+          items.AddSortMethod(SortByDate, 552, LABEL_MASKS("%L", "%J", "%L", "%J"));
         }
     }
 

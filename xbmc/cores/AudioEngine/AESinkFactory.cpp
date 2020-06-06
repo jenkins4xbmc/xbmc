@@ -1,156 +1,112 @@
 /*
- *      Copyright (C) 2010-2013 Team XBMC
- *      http://xbmc.org
+ *  Copyright (C) 2010-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "AESinkFactory.h"
-#include "Interfaces/AESink.h"
-#if defined(TARGET_WINDOWS)
-  #include "Sinks/AESinkWASAPI.h"
-  #include "Sinks/AESinkDirectSound.h"
-#elif defined(TARGET_ANDROID)
-  #include "Sinks/AESinkAUDIOTRACK.h"
-#elif defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
-  #if defined(HAS_ALSA)
-    #include "Sinks/AESinkALSA.h"
-  #endif
-  #include "Sinks/AESinkOSS.h"
-#else
-  #pragma message("NOTICE: No audio sink for target platform.  Audio output will not be available.")
-#endif
-#include "Sinks/AESinkProfiler.h"
-#include "Sinks/AESinkNULL.h"
 
-#include "settings/AdvancedSettings.h"
-#include "utils/SystemInfo.h"
+#include "Interfaces/AESink.h"
+#include "ServiceBroker.h"
+#include "utils/StringUtils.h"
 #include "utils/log.h"
+
+#include <algorithm>
+
+using namespace AE;
+
+std::map<std::string, AESinkRegEntry> CAESinkFactory::m_AESinkRegEntry;
+
+void CAESinkFactory::RegisterSink(AESinkRegEntry regEntry)
+{
+  m_AESinkRegEntry[regEntry.sinkName] = regEntry;
+
+  IAE *ae = CServiceBroker::GetActiveAE();
+  if (ae)
+    ae->DeviceChange();
+}
+
+void CAESinkFactory::ClearSinks()
+{
+  m_AESinkRegEntry.clear();
+}
+
+bool CAESinkFactory::HasSinks()
+{
+  return !m_AESinkRegEntry.empty();
+}
 
 void CAESinkFactory::ParseDevice(std::string &device, std::string &driver)
 {
   int pos = device.find_first_of(':');
+  bool found = false;
   if (pos > 0)
   {
     driver = device.substr(0, pos);
-    std::transform(driver.begin(), driver.end(), driver.begin(), ::toupper);
 
-    // check that it is a valid driver name
-    if (
-#if defined(TARGET_WINDOWS)
-        driver == "WASAPI"      ||
-        driver == "DIRECTSOUND" ||
-#elif defined(TARGET_ANDROID)
-        driver == "AUDIOTRACK"  ||
-#elif defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
-  #if defined(HAS_ALSA)
-        driver == "ALSA"        ||
-  #endif
-        driver == "OSS"         ||
-#endif
-        driver == "PROFILER")
+    for (auto reg : m_AESinkRegEntry)
+    {
+      if (!StringUtils::EqualsNoCase(driver, reg.second.sinkName))
+        continue;
+
       device = device.substr(pos + 1, device.length() - pos - 1);
-    else
-      driver.clear();
+      found = true;
+    }
   }
-  else
+
+  if (!found)
     driver.clear();
 }
 
-#define TRY_SINK(SINK) \
-{ \
-  tmpFormat = desiredFormat; \
-  tmpDevice = device; \
-  sink      = new CAESink ##SINK(); \
-  if (sink->Initialize(tmpFormat, tmpDevice)) \
-  { \
-    desiredFormat = tmpFormat; \
-    device        = tmpDevice; \
-    return sink; \
-  } \
-  sink->Deinitialize(); \
-  delete sink; \
-  sink = NULL; \
-}
-
-IAESink *CAESinkFactory::Create(std::string &device, AEAudioFormat &desiredFormat, bool rawPassthrough)
+IAESink *CAESinkFactory::Create(std::string &device, AEAudioFormat &desiredFormat)
 {
   // extract the driver from the device string if it exists
   std::string driver;
   ParseDevice(device, driver);
 
-  AEAudioFormat  tmpFormat;
-  IAESink       *sink;
-  std::string    tmpDevice;
+  AEAudioFormat tmpFormat = desiredFormat;
+  IAESink *sink;
+  std::string tmpDevice = device;
 
-  if (driver == "PROFILER")
-    TRY_SINK(Profiler);
+  for (auto reg : m_AESinkRegEntry)
+  {
+    if (driver != reg.second.sinkName)
+      continue;
 
-
-#if defined(TARGET_WINDOWS)
-  if ((driver.empty() && g_sysinfo.IsWindowsVersionAtLeast(CSysInfo::WindowsVersionVista) ||
-    driver == "WASAPI") && !g_advancedSettings.m_audioForceDirectSound)
-    TRY_SINK(WASAPI)
-  else
-    TRY_SINK(DirectSound) // always fall back to DirectSound
-
-#elif defined(TARGET_ANDROID)
-  if (driver.empty() || driver == "AUDIOTRACK")
-    TRY_SINK(AUDIOTRACK)
-
-#elif defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
-  #if defined(HAS_ALSA)
-  if (driver.empty() || driver == "ALSA")
-    TRY_SINK(ALSA)
-  #endif
-
-  if (driver.empty() || driver == "OSS")
-    TRY_SINK(OSS)
-#endif
-
-  // complete failure.
-  TRY_SINK(NULL);
-
-  // should never get here
-  ASSERT(false);
-  return NULL;
+    sink = reg.second.createFunc(tmpDevice, tmpFormat);
+    if (sink)
+    {
+      desiredFormat = tmpFormat;
+      return sink;
+    }
+  }
+  return nullptr;
 }
 
-#define ENUMERATE_SINK(SINK, force) { \
-  AESinkInfo info; \
-  info.m_sinkName = #SINK; \
-  CAESink ##SINK::EnumerateDevicesEx(info.m_deviceInfoList, force); \
-  if(!info.m_deviceInfoList.empty()) \
-    list.push_back(info); \
-}
-
-void CAESinkFactory::EnumerateEx(AESinkInfoList &list, bool force)
+void CAESinkFactory::EnumerateEx(std::vector<AESinkInfo>& list, bool force, std::string driver)
 {
-#if defined(TARGET_WINDOWS)
-  ENUMERATE_SINK(DirectSound, force);
-  if (g_sysinfo.IsWindowsVersionAtLeast(CSysInfo::WindowsVersionVista) && !g_advancedSettings.m_audioForceDirectSound)
-    ENUMERATE_SINK(WASAPI, force);
-#elif defined(TARGET_ANDROID)
-    ENUMERATE_SINK(AUDIOTRACK, force);
-#elif defined(TARGET_LINUX) || defined(TARGET_FREEBSD)
-  #if defined(HAS_ALSA)
-    ENUMERATE_SINK(ALSA, force);
-  #endif
+  AESinkInfo info;
 
-    ENUMERATE_SINK(OSS, force);
-#endif
+  for(auto reg : m_AESinkRegEntry)
+  {
+    if (!driver.empty() && driver != reg.second.sinkName)
+      continue;
 
+    info.m_deviceInfoList.clear();
+    info.m_sinkName = reg.second.sinkName;
+    reg.second.enumerateFunc(info.m_deviceInfoList, force);
+    if (!info.m_deviceInfoList.empty())
+      list.push_back(info);
+  }
+}
+
+void CAESinkFactory::Cleanup()
+{
+  for (auto reg : m_AESinkRegEntry)
+  {
+    if (reg.second.cleanupFunc)
+      reg.second.cleanupFunc();
+  }
 }

@@ -1,17 +1,19 @@
 include ../../Makefile.include
-DEPS= ../../Makefile.include 01-SDL_SetWidthHeight.patch 02-mmx.patch Makefile
+DEPS= ../../Makefile.include Makefile 01-SDL_SetWidthHeight.patch 02-OSX_interpretKeyEvents.patch 03-mavericks-compile.patch 04-fix_external_screen_crash.patch
 
 # lib name, version
 LIBNAME=SDL
-VERSION=1.2.14
+VERSION=1.2.15
 SOURCE=$(LIBNAME)-$(VERSION)
 ARCHIVE=$(SOURCE).tar.gz
 
 # configuration settings
-CONFIGURE=./configure --prefix=$(PREFIX) \
-  --without-x --disable-video-x11 --disable-video-directfb
+CONFIGURE=./configure --prefix=$(PREFIX) --disable-video-directfb
+ifneq ($(OS),linux)
+CONFIGURE += --without-x --disable-video-x11
+endif
 
-LIBDYLIB=$(PLATFORM)/build/.libs/lib$(LIBNAME).so
+LIBDYLIB=$(PLATFORM)/build/.libs/lib$(LIBNAME).a
 
 all: .installed-$(PLATFORM)
 
@@ -21,8 +23,11 @@ $(TARBALLS_LOCATION)/$(ARCHIVE):
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
-	cd $(PLATFORM); patch -p0 < ../01-SDL_SetWidthHeight.patch
-	cd $(PLATFORM); patch -p0 < ../02-mmx.patch
+	cd $(PLATFORM); patch -p1 -i ../01-SDL_SetWidthHeight.patch
+	cd $(PLATFORM); patch -p1 -i ../02-OSX_interpretKeyEvents.patch
+	cd $(PLATFORM); patch -p1 -i ../03-mavericks-compile.patch
+	cd $(PLATFORM); patch -p1 -i ../04-fix_external_screen_crash.patch
+	cd $(PLATFORM); ./autogen.sh
 	cd $(PLATFORM); $(CONFIGURE)
 
 $(LIBDYLIB): $(PLATFORM)

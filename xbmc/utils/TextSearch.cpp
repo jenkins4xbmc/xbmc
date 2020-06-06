@@ -1,38 +1,19 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
- *  <http://www.gnu.org/licenses/>.
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "TextSearch.h"
 
-using namespace std;
+#include "StringUtils.h"
 
-CTextSearch::CTextSearch(const CStdString &strSearchTerms, bool bCaseSensitive /* = false */, TextSearchDefault defaultSearchMode /* = SEARCH_DEFAULT_OR */)
+CTextSearch::CTextSearch(const std::string &strSearchTerms, bool bCaseSensitive /* = false */, TextSearchDefault defaultSearchMode /* = SEARCH_DEFAULT_OR */)
 {
   m_bCaseSensitive = bCaseSensitive;
   ExtractSearchTerms(strSearchTerms, defaultSearchMode);
-}
-
-CTextSearch::~CTextSearch(void)
-{
-  m_AND.clear();
-  m_OR.clear();
-  m_NOT.clear();
 }
 
 bool CTextSearch::IsValid(void) const
@@ -40,27 +21,27 @@ bool CTextSearch::IsValid(void) const
   return m_AND.size() > 0 || m_OR.size() > 0 || m_NOT.size() > 0;
 }
 
-bool CTextSearch::Search(const CStdString &strHaystack) const
+bool CTextSearch::Search(const std::string &strHaystack) const
 {
-  if (strHaystack.IsEmpty() || !IsValid())
+  if (strHaystack.empty() || !IsValid())
     return false;
 
-  CStdString strSearch(strHaystack);
+  std::string strSearch(strHaystack);
   if (!m_bCaseSensitive)
-    strSearch = strSearch.ToLower();
+    StringUtils::ToLower(strSearch);
 
   /* check whether any of the NOT terms matches and return false if there's a match */
   for (unsigned int iNotPtr = 0; iNotPtr < m_NOT.size(); iNotPtr++)
   {
-    if (strSearch.Find(m_NOT.at(iNotPtr)) != -1)
+    if (strSearch.find(m_NOT.at(iNotPtr)) != std::string::npos)
       return false;
   }
 
   /* check whether at least one of the OR terms matches and return false if there's no match found */
-  bool bFound(m_OR.size() == 0);
+  bool bFound(m_OR.empty());
   for (unsigned int iOrPtr = 0; iOrPtr < m_OR.size(); iOrPtr++)
   {
-    if (strSearch.Find(m_OR.at(iOrPtr)) != -1)
+    if (strSearch.find(m_OR.at(iOrPtr)) != std::string::npos)
     {
       bFound = true;
       break;
@@ -72,7 +53,7 @@ bool CTextSearch::Search(const CStdString &strHaystack) const
   /* check whether all of the AND terms match and return false if one of them wasn't found */
   for (unsigned int iAndPtr = 0; iAndPtr < m_AND.size(); iAndPtr++)
   {
-    if (strSearch.Find(m_AND[iAndPtr]) == -1)
+    if (strSearch.find(m_AND[iAndPtr]) == std::string::npos)
       return false;
   }
 
@@ -80,20 +61,20 @@ bool CTextSearch::Search(const CStdString &strHaystack) const
   return true;
 }
 
-void CTextSearch::GetAndCutNextTerm(CStdString &strSearchTerm, CStdString &strNextTerm)
+void CTextSearch::GetAndCutNextTerm(std::string &strSearchTerm, std::string &strNextTerm)
 {
-  CStdString strFindNext(" ");
+  std::string strFindNext(" ");
 
-  if (strSearchTerm.Left(1).Equals("\""))
+  if (StringUtils::EndsWith(strSearchTerm, "\""))
   {
     strSearchTerm.erase(0, 1);
     strFindNext = "\"";
   }
 
-  int iNextPos = strSearchTerm.Find(strFindNext);
-  if (iNextPos != -1)
+  size_t iNextPos = strSearchTerm.find(strFindNext);
+  if (iNextPos != std::string::npos)
   {
-    strNextTerm = strSearchTerm.Left(iNextPos);
+    strNextTerm = strSearchTerm.substr(0, iNextPos);
     strSearchTerm.erase(0, iNextPos + 1);
   }
   else
@@ -103,13 +84,13 @@ void CTextSearch::GetAndCutNextTerm(CStdString &strSearchTerm, CStdString &strNe
   }
 }
 
-void CTextSearch::ExtractSearchTerms(const CStdString &strSearchTerm, TextSearchDefault defaultSearchMode)
+void CTextSearch::ExtractSearchTerms(const std::string &strSearchTerm, TextSearchDefault defaultSearchMode)
 {
-  CStdString strParsedSearchTerm(strSearchTerm);
-  strParsedSearchTerm = strParsedSearchTerm.Trim();
+  std::string strParsedSearchTerm(strSearchTerm);
+  StringUtils::Trim(strParsedSearchTerm);
 
   if (!m_bCaseSensitive)
-    strParsedSearchTerm = strParsedSearchTerm.ToLower();
+    StringUtils::ToLower(strParsedSearchTerm);
 
   bool bNextAND(defaultSearchMode == SEARCH_DEFAULT_AND);
   bool bNextOR(defaultSearchMode == SEARCH_DEFAULT_OR);
@@ -117,29 +98,29 @@ void CTextSearch::ExtractSearchTerms(const CStdString &strSearchTerm, TextSearch
 
   while (strParsedSearchTerm.length() > 0)
   {
-    strParsedSearchTerm = strParsedSearchTerm.TrimLeft();
+    StringUtils::TrimLeft(strParsedSearchTerm);
 
-    if (strParsedSearchTerm.Left(1).Equals("!") || strParsedSearchTerm.Left(3).Equals("NOT"))
+    if (StringUtils::StartsWith(strParsedSearchTerm, "!") || StringUtils::StartsWithNoCase(strParsedSearchTerm, "not"))
     {
-      CStdString strDummy;
+      std::string strDummy;
       GetAndCutNextTerm(strParsedSearchTerm, strDummy);
       bNextNOT = true;
     }
-    else if (strParsedSearchTerm.Left(1).Equals("+") || strParsedSearchTerm.Left(3).Equals("AND"))
+    else if (StringUtils::StartsWith(strParsedSearchTerm, "+") || StringUtils::StartsWithNoCase(strParsedSearchTerm, "and"))
     {
-      CStdString strDummy;
+      std::string strDummy;
       GetAndCutNextTerm(strParsedSearchTerm, strDummy);
       bNextAND = true;
     }
-    else if (strParsedSearchTerm.Left(1).Equals("|") || strParsedSearchTerm.Left(2).Equals("OR"))
+    else if (StringUtils::StartsWith(strParsedSearchTerm, "|") || StringUtils::StartsWithNoCase(strParsedSearchTerm, "or"))
     {
-      CStdString strDummy;
+      std::string strDummy;
       GetAndCutNextTerm(strParsedSearchTerm, strDummy);
       bNextOR = true;
     }
     else
     {
-      CStdString strTerm;
+      std::string strTerm;
       GetAndCutNextTerm(strParsedSearchTerm, strTerm);
       if (strTerm.length() > 0)
       {
@@ -160,6 +141,6 @@ void CTextSearch::ExtractSearchTerms(const CStdString &strSearchTerm, TextSearch
       bNextNOT = (defaultSearchMode == SEARCH_DEFAULT_NOT);
     }
 
-    strParsedSearchTerm = strParsedSearchTerm.TrimLeft();
+    StringUtils::TrimLeft(strParsedSearchTerm);
   }
 }

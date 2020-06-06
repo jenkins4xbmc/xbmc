@@ -18,7 +18,11 @@ ARCHIVE=$(SOURCE).tar.gz
 # us to change the typedef of off_t in android's sys/type.h.
 # Then xbmc will correctly access smb shares with LFS enabled
 # using the altered libsmbclient.h.
-#export CFLAGS+=-D_FILE_OFFSET_BITS=64 -D_OFF_T_DEFINED_ -Doff_t=off64_t -Dlseek=lseek64
+ifeq ($(OS),android)
+export CFLAGS+=-D_FILE_OFFSET_BITS=64 -D_OFF_T_DEFINED_ -Doff_t=off64_t -Dlseek=lseek64
+ANDROID_OFF_T_FIX=sed -ie "s|off_t|off64_t|g" "$(PLATFORM)/source/include/libsmbclient.h"
+endif
+
 CONFIGURE= cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
           ./configure --prefix=$(PREFIX) \
         --disable-cups \
@@ -43,8 +47,6 @@ CONFIGURE= cp -f $(CONFIG_SUB) $(CONFIG_GUESS) .; \
 
 LIBDYLIB=$(PLATFORM)/source/bin/libsmbclient.a
 
-CLEAN_FILES=$(ARCHIVE) $(PLATFORM)
-
 all: .installed-$(PLATFORM)
 
 $(TARBALLS_LOCATION)/$(ARCHIVE):
@@ -53,13 +55,13 @@ $(TARBALLS_LOCATION)/$(ARCHIVE):
 $(PLATFORM): $(TARBALLS_LOCATION)/$(ARCHIVE) $(DEPS)
 	rm -rf $(PLATFORM); mkdir -p $(PLATFORM)
 	cd $(PLATFORM); $(ARCHIVE_TOOL) $(ARCHIVE_TOOL_FLAGS) $(TARBALLS_LOCATION)/$(ARCHIVE)
-	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-configure.in.patch
-	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-CVE-2010-2063.patch
-	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-silence-receive-warning.patch
-	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-vfs_default.c.patch
-	cd $(PLATFORM); patch -p1 < ../samba30-3.0.37-wle-fix.patch
-	cd $(PLATFORM); patch -p0 < ../samba_android.patch
-#	sed -ie "s|off_t|off64_t|g" "$(PLATFORM)/source/include/libsmbclient.h"
+	cd $(PLATFORM); patch -p1 -i ../samba30-3.0.37-configure.in.patch
+	cd $(PLATFORM); patch -p1 -i ../samba30-3.0.37-CVE-2010-2063.patch
+	cd $(PLATFORM); patch -p1 -i ../samba30-3.0.37-silence-receive-warning.patch
+	cd $(PLATFORM); patch -p1 -i ../samba30-3.0.37-vfs_default.c.patch
+	cd $(PLATFORM); patch -p1 -i ../samba30-3.0.37-wle-fix.patch
+	cd $(PLATFORM); patch -p1 -i ../samba_android.patch
+	$(ANDROID_OFF_T_FIX)
 	cd $(PLATFORM)/source && ./autogen.sh
 	cd $(PLATFORM)/source; $(CONFIGURE)
 

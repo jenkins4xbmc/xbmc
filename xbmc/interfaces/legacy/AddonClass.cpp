@@ -1,28 +1,15 @@
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://www.xbmc.org
+ *  Copyright (C) 2005-2018 Team Kodi
+ *  This file is part of Kodi - https://kodi.tv
  *
- *  This Program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  This Program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *  http://www.gnu.org/copyleft/gpl.html
- *
+ *  SPDX-License-Identifier: GPL-2.0-or-later
+ *  See LICENSES/README.md for more information.
  */
 
 #include "AddonClass.h"
-
+#ifdef XBMC_ADDON_DEBUG_MEMORY
 #include "utils/log.h"
-
+#endif
 #include "LanguageHook.h"
 #include "AddonUtils.h"
 
@@ -38,24 +25,14 @@ namespace XBMCAddon
     if (languageHook != NULL)
       languageHook->Release();
 
-#ifdef ENABLE_TRACE_API
-    TraceGuard tg_;
-    CLog::Log(LOGDEBUG, "%sNEWADDON destroying %s 0x%lx", tg_.getSpaces(), classname.c_str(), (long)(((void*)this)));
-#endif
-
 #ifdef XBMC_ADDON_DEBUG_MEMORY
     isDeleted = false;
 #endif
   }
 
-  AddonClass::AddonClass(const char* cname) : refs(0L), classname(cname), m_isDeallocating(false), 
-                                              languageHook(NULL)
+  AddonClass::AddonClass() : refs(0L),
+                             languageHook(NULL)
   {
-#ifdef ENABLE_TRACE_API
-    TraceGuard tg_;
-    CLog::Log(LOGDEBUG, "%sNEWADDON constructing %s 0x%lx", tg_.getSpaces(), classname.c_str(), (long)(((void*)this)));
-#endif
-
 #ifdef XBMC_ADDON_DEBUG_MEMORY
     isDeleted = false;
 #endif
@@ -78,16 +55,16 @@ namespace XBMCAddon
   void AddonClass::Release() const
   {
     if (isDeleted)
-      CLog::Log(LOGERROR,"NEWADDON REFCNT Releasing dead class %s 0x%lx", 
-                classname.c_str(), (long)(((void*)this)));
+      CLog::Log(LOGERROR,"NEWADDON REFCNT Releasing dead class %s 0x%lx",
+                GetClassname(), (long)(((void*)this)));
 
-    long ct = AtomicDecrement((long*)&refs);
+    long ct = --refs;
 #ifdef LOG_LIFECYCLE_EVENTS
-    CLog::Log(LOGDEBUG,"NEWADDON REFCNT decrementing to %ld on %s 0x%lx", ct,classname.c_str(), (long)(((void*)this)));
+    CLog::Log(LOGDEBUG,"NEWADDON REFCNT decrementing to %ld on %s 0x%lx", refs.load(), GetClassname(), (long)(((void*)this)));
 #endif
     if(ct == 0)
     {
-        ((AddonClass*)this)->isDeleted = true;
+        const_cast<AddonClass*>(this)->isDeleted = true;
         // we're faking a delete but not doing it so call the destructor explicitly
         this->~AddonClass();
     }
@@ -96,18 +73,17 @@ namespace XBMCAddon
   void AddonClass::Acquire() const
   {
     if (isDeleted)
-      CLog::Log(LOGERROR,"NEWADDON REFCNT Acquiring dead class %s 0x%lx", 
-                classname.c_str(), (long)(((void*)this)));
+      CLog::Log(LOGERROR,"NEWADDON REFCNT Acquiring dead class %s 0x%lx",
+                GetClassname(), (long)(((void*)this)));
 
 #ifdef LOG_LIFECYCLE_EVENTS
-    CLog::Log(LOGDEBUG,"NEWADDON REFCNT incrementing to %ld on %s 0x%lx", 
-              AtomicIncrement((long*)&refs),classname.c_str(), (long)(((void*)this)));
+    CLog::Log(LOGDEBUG,"NEWADDON REFCNT incrementing to %ld on %s 0x%lx",
+              ++refs, GetClassname(), (long)(((void*)this)));
 #else
-    AtomicIncrement((long*)&refs);
+    ++refs;
 #endif
   }
-
 #endif
 }
 
-              
+
